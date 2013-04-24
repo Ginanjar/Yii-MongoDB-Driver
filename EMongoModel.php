@@ -2,6 +2,20 @@
 
 class EMongoModel extends CModel
 {
+    private $mongoTypes = array(
+        'MongoId',
+        'MongoCode',
+        'MongoDate',
+        'MongoRegex',
+        'MongoBinData',
+        'MongoInt32',
+        'MongoInt64',
+        'MongoDBRef',
+        'MongoMinKey',
+        'MongoMaxKey',
+        'MongoTimestamp',
+    );
+
     /**
      * @var
      */
@@ -194,15 +208,18 @@ class EMongoModel extends CModel
         $attributes = array_flip($safeOnly ? $this->getSafeAttributeNames() : $this->attributeNames());
 
         foreach ($values as $name => $value) {
+            
+            $isMongoType = 'object' === gettype($value) && in_array(get_class($value), $this->mongoTypes);
+
             if ($safeOnly) {
                 if (isset($attributes[$name])) {
-                    $this->$name= !is_array($value) && preg_match('/^[0-9]+$/', $value) > 0 ? (int) $value : $value;
+                    $this->$name= !$isMongoType && !is_array($value) && preg_match('/^[0-9]+$/', $value) > 0 ? (int) $value : $value;
                 }
                 elseif ($safeOnly) {
                     $this->onUnsafeAttribute($name, $value);
                 }
             } else {
-                $this->$name= !is_array($value) && preg_match('/^[0-9]+$/', $value) > 0 ? (int) $value : $value;
+                $this->$name= !$isMongoType &&  !is_array($value) && preg_match('/^[0-9]+$/', $value) > 0 ? (int) $value : $value;
             }
         }
     }
