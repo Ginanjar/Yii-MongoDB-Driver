@@ -208,7 +208,7 @@ class EMongoModel extends CModel
         $attributes = array_flip($safeOnly ? $this->getSafeAttributeNames() : $this->attributeNames());
 
         foreach ($values as $name => $value) {
-            
+
             $isMongoType = 'object' === gettype($value) && in_array(get_class($value), $this->mongoTypes);
 
             if ($safeOnly) {
