@@ -417,6 +417,31 @@ abstract class YMongoDocument extends CModel
     }
 
     /**
+     * Count() allows you to count all the documents returned by a certain condition, it is analogous
+     * to $db->collection->find()->count() and basically does exactly that...
+     *
+     * @param array|YMongoCriteria $criteria
+     * @return int
+     */
+    public function count($criteria = array())
+    {
+        Yii::trace(get_class($this).'.count()', 'ext.mongoDb.YMongoDocument');
+
+        // If we provide a manual criteria via YMongoCriteria or an array we do not use the models own DbCriteria
+        $criteria = !empty($criteria) && !($criteria instanceof YMongoCriteria) ? $criteria : $this->getDbCriteria();
+
+        if ($criteria instanceof YMongoCriteria) {
+            $criteria = $criteria->getCondition();
+        }
+
+        try {
+            return $this->getCollection()->find(!empty($criteria) ? $criteria : array())->count();
+        } catch (Exception $e) { }
+
+        return 0;
+    }
+
+    /**
      * Find one record
      *
      * @param array|YMongoCriteria $criteria
