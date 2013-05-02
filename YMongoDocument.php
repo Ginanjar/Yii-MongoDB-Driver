@@ -551,6 +551,103 @@ abstract class YMongoDocument extends CModel
     }
 
     /**
+     * Deletes this record
+     *
+     * @return bool
+     * @throws YMongoException
+     */
+    public function delete()
+    {
+        if ($this->getIsNewRecord()) {
+            throw new YMongoException(Yii::t('yii','The active record cannot be deleted because it is new.'));
+        }
+
+        Yii::trace(get_class($this).'.delete()', 'ext.mongoDb.YMongoDocument');
+
+        if ($this->beforeDelete()) {
+            $result = $this->deleteByPk($this->{$this->primaryKey()});
+            $this->afterDelete();
+            return $result;
+        }
+        return false;
+    }
+
+    /**
+     * Delete record by pk
+     *
+     * @param string|MongoId $pk
+     * @param array|YMongoCriteria $criteria
+     * @param array $options
+     * @return bool|array
+     */
+    public function deleteByPk($pk, $criteria = array(), $options = array())
+    {
+        Yii::trace(get_class($this).'.deleteByPk()', 'ext.mongoDb.YMongoDocument');
+
+        if ($criteria instanceof YMongoCriteria) {
+            $criteria = $criteria->getCondition();
+        }
+
+        try {
+            $res = $this->getCollection()->remove(
+                CMap::mergeArray(
+                    array($this->primaryKey() => $this->getPrimaryKey($pk)),
+                    $criteria
+                ),
+                CMap::mergeArray(
+                    $this->getConnection()->getDefaultWriteConcern(),
+                    array('justOne' => true),
+                    $options
+                )
+            );
+
+            /**
+             * Returns an array containing the status of the update if the "w" option is set.
+             * Otherwise, returns TRUE.
+             */
+            if (true === $res || (is_array($res) && !empty($res['ok']))) {
+                return true;
+            }
+        } catch (Exception $e) { }
+        return false;
+    }
+
+    /**
+     * Delete all records matching a criteria
+     *
+     * @param array|YMongoCriteria $criteria
+     * @param array $options
+     * @return bool|array
+     */
+    public function deleteAll($criteria = array(), $options = array())
+    {
+        Yii::trace(get_class($this).'.deleteAll()', 'ext.mongoDb.YMongoDocument');
+
+        if ($criteria instanceof YMongoCriteria) {
+            $criteria = $criteria->getCondition();
+        }
+
+        try {
+            $res = $this->getCollection()->remove(
+                $criteria,
+                CMap::mergeArray(
+                    $this->getConnection()->getDefaultWriteConcern(),
+                    $options
+                )
+            );
+
+            /**
+             * Returns an array containing the status of the update if the "w" option is set.
+             * Otherwise, returns TRUE.
+             */
+            if (true === $res || (is_array($res) && !empty($res['ok']))) {
+                return true;
+            }
+        } catch (Exception $e) { }
+        return false;
+    }
+
+    /**
      * @return YMongoDocument
      */
     protected function instantiate()
