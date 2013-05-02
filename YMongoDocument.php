@@ -51,6 +51,13 @@ abstract class YMongoDocument extends CModel
     private $_new = false;
 
     /**
+     * Holds criteria information for scopes
+     *
+     * @var array
+     */
+    private $_criteria = array();
+
+    /**
      * The base model creation
      *
      * @param string $scenario
@@ -289,6 +296,93 @@ abstract class YMongoDocument extends CModel
         return false;
     }
 
+    /**
+     * Find one record
+     *
+     * @param array|YMongoCriteria $criteria
+     * @return YMongoDocument
+     */
+    public function findOne($criteria = array())
+    {
+        Yii::trace(get_class($this).'.findOne()', 'ext.mongoDb.YMongoDocument');
+
+        if ($criteria instanceof YMongoCriteria) {
+            $criteria = $criteria->getCondition();
+        }
+
+        $dbCriteria = $this->getDbCriteria();
+
+        $this->beforeFind();
+        try {
+            $record = $this->getCollection()->findOne(
+                $this->mergeCriteria(
+                    isset($dbCriteria['condition']) ? $dbCriteria['condition'] : array(),
+                    $criteria
+                )
+            );
+        } catch (Exception $e) {
+            $record = null;
+        }
+
+        if (null !== $record) {
+            $this->resetScope();
+            return $this->populateRecord($record);
+        }
+        return null;
+    }
+
+    /**
+     * @param string|MongoId $pk
+     * @return YMongoDocument
+     */
+    public function findByPk($pk)
+    {
+        Yii::trace(get_class($this).'.findByPk()', 'ext.mongoDb.YMongoDocument');
+        return $this->findOne(array($this->primaryKey() => $this->getPrimaryKey($pk)));
+    }
+
+    /**
+     * Find some records
+     *
+     * @param array|YMongoCriteria $criteria
+     * @return YMongoCursor
+     */
+    public function find($criteria = array())
+    {
+        Yii::trace(get_class($this).'.find()', 'ext.mongoDb.YMongoDocument');
+
+        if ($criteria instanceof YMongoCriteria) {
+            $dbCriteria = $criteria->mergeWith($this->getDbCriteria())->toArray();
+            $criteria = array();
+        } else {
+            $dbCriteria = $this->getDbCriteria();
+        }
+
+        if (array() !== $dbCriteria) {
+            $cursor = new YMongoCursor($this,
+                $this->mergeCriteria(
+                    isset($dbCriteria['condition']) ? $dbCriteria['condition'] : array(),
+                    $criteria
+                )
+            );
+
+            // Set cursor conditions
+            if (isset($dbCriteria['sort'])) {
+                $cursor->sort($dbCriteria['sort']);
+            }
+            if (isset($dbCriteria['skip'])) {
+                $cursor->skip($dbCriteria['skip']);
+            }
+            if (isset($dbCriteria['limit'])) {
+                $cursor->limit($dbCriteria['limit']);
+            }
+
+            $this->resetScope();
+            return $cursor;
+        } else {
+            return new YMongoCursor($this, $criteria);
+        }
+    }
 
 
 
@@ -296,11 +390,148 @@ abstract class YMongoDocument extends CModel
 
 
 
+    /**
+     * @return YMongoDocument
+     */
+    protected function instantiate()
+    {
+        $class = get_class($this);
+        return new $class(null);
+    }
 
+    /**
+     * Create a new model based on attributes
+     *
+     * @param array $attributes
+     * @param bool $callAfterFind
+     * @return YMongoDocument
+     */
+    public function populateRecord($attributes, $callAfterFind = true)
+    {
+        if (false === $attributes) {
+            return null;
+        }
 
+        $record = $this->instantiate();
+        $record->setScenario(self::SCENARIO_UPDATE);
+        $record->setIsNewRecord(false);
+        $record->init();
 
+        // Set the attributes
+        foreach($attributes as $name => $value) {
+            $record->$name = $value;
+        }
 
+        $record->attachBehaviors($record->behaviors());
 
+        if ($callAfterFind) {
+            $this->afterFind();
+        }
+
+        return $record;
+    }
+
+    /**
+     * The scope attached to this model
+     *
+     * @example
+     *
+     * array(
+     *     '10_recently_published' => array(
+     *         'condition' => array('published' => 1),
+     *         'sort' => array('date_published' => -1),
+     *         'skip' => 5,
+     *         'limit' => 10,
+     *     )
+     * )
+     *
+     * @return array
+     */
+    public function scopes()
+    {
+        return array();
+    }
+
+    /**
+     * Sets the default scope
+     *
+     * @example
+     *
+     * array(
+     *     'condition' => array('published' => 1),
+     *     'sort' => array('date_published' => -1),
+     *     'skip' => 5,
+     *     'limit' => 10,
+     * )
+     *
+     * @return array
+     */
+    public function defaultScope()
+    {
+        return array();
+    }
+
+    /**
+     * Resets the scopes applied to the model clearing the criteria variable
+     *
+     * @return $this
+     */
+    public function resetScope()
+    {
+        $this->_criteria = array();
+        return $this;
+    }
+
+    /**
+     * Sets the db criteria for this model
+     *
+     * @param array $criteria
+     * @return mixed
+     */
+    public function setDbCriteria(array $criteria)
+    {
+        return $this->_criteria = $criteria;
+    }
+
+    /**
+     * Gets and if null sets the db criteria for this model
+     *
+     * @param bool $createIfNull
+     * @return array
+     */
+    public function getDbCriteria($createIfNull = true)
+    {
+        if (empty($this->_criteria)) {
+            $defaultScope = $this->defaultScope();
+            if (array() !== $defaultScope || $createIfNull) {
+                $this->_criteria = $defaultScope;
+            }
+        }
+        return $this->_criteria;
+    }
+
+    /**
+     * Merges the current DB Criteria with the inputted one
+     *
+     * @param array $newCriteria
+     * @return mixed
+     */
+    public function mergeDbCriteria(array $newCriteria)
+    {
+        return $this->_criteria = $this->mergeCriteria($this->getDbCriteria(), $newCriteria);
+    }
+
+    /**
+     * Merges two criteria objects. Best used for scopes
+     *
+     * @param array $oldCriteria
+     * @param array $newCriteria
+     * @return array
+     */
+    public function mergeCriteria(array $oldCriteria, array $newCriteria)
+    {
+        return CMap::mergeArray($oldCriteria, $newCriteria);
+    }
 
     /**
      * Get the names of the attributes of the class
