@@ -1,6 +1,6 @@
 <?php
 
-class EMongoException extends CException
+class YMongoException extends CException
 {
     /**
      * Additional information
@@ -18,5 +18,14 @@ class EMongoException extends CException
     {
         $this->errorInfo = $errorInfo;
         parent::__construct($message, $code);
+    }
+
+    /**
+     * @param Exception $e
+     * @return YMongoException
+     */
+    public static function copy(Exception $e)
+    {
+        return new self($e->getMessage(), $e->getCode());
     }
 }

@@ -9,7 +9,7 @@ if (version_compare(phpversion('mongo'), '1.3.0', '<')) {
     throw new CException('Please update MongoDB driver to version 1.3.0 or earlier.');
 }
 
-class EMongoClient extends CApplicationComponent
+class YMongoClient extends CApplicationComponent
 {
     /**
      * Connection string (pre-1.3)
@@ -82,6 +82,7 @@ class EMongoClient extends CApplicationComponent
      */
     private $db;
 
+
     /**
      * Initialize application
      */
@@ -99,6 +100,8 @@ class EMongoClient extends CApplicationComponent
 
     /**
      * Connect and set read preference
+     *
+     * @throws YMongoException
      */
     public function connect()
     {
@@ -108,7 +111,13 @@ class EMongoClient extends CApplicationComponent
         }
 
         // Create connection
-        $this->mongo = new MongoClient($this->server, $this->options);
+        try {
+            $this->mongo = new MongoClient($this->server, $this->options);
+        }
+        // Lets throw YMongoException
+        catch(Exception $e) { /** MongoConnectionException */
+            throw YMongoException::copy($e);
+        }
 
         // Set read preference
         $this->mongo->setReadPreference($this->readPreference, $this->readPreferenceTags);
@@ -118,13 +127,13 @@ class EMongoClient extends CApplicationComponent
      * Get a database connection
      *
      * @return MongoClient
+     * @throws YMongoException
      */
     public function getConnection()
     {
-        if (empty($this->mongo)) {
+        if (null === $this->mongo) {
             $this->connect();
         }
-
         return $this->mongo;
     }
 
@@ -142,23 +151,30 @@ class EMongoClient extends CApplicationComponent
      * Set database
      *
      * @param string $dbName
+     * @throws YMongoException
      */
-    public function setDatabase($dbName)
+    public function setDatabase($dbName = 'admin')
     {
-        $this->db = $this->getConnection()->selectDB($dbName);
+        try {
+            $this->db = $this->getConnection()->selectDB($dbName);
+        }
+        // Lets throw YMongoException
+        catch (Exception $e) {
+            throw YMongoException::copy($e);
+        }
     }
 
     /**
      * Get database
      *
      * @return MongoDB
+     * @throws YMongoException
      */
     public function getDatabase()
     {
-        if (empty($this->db)) {
+        if (null === $this->db) {
             $this->setDatabase($this->dbName);
         }
-
         return $this->db;
     }
 
@@ -171,11 +187,18 @@ class EMongoClient extends CApplicationComponent
     /**
      * Get a pointer to the collection
      *
-     * @param $collectionName
+     * @param string $collectionName
      * @return MongoCollection
+     * @throws YMongoException
      */
-    public function getCollection($collectionName)
+    public function getCollection($collectionName = 'test')
     {
-        return $this->getDatabase()->selectCollection($collectionName);
+        try {
+            return $this->getDatabase()->selectCollection($collectionName);
+        }
+        // Lets throw YMongoException
+        catch (Exception $e) {
+            throw YMongoException::copy($e);
+        }
     }
 }
