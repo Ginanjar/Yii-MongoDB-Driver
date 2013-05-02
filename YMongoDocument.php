@@ -36,10 +36,15 @@ abstract class YMongoDocument extends CModel
      *
      * @var array
      */
-    private static $_attributes = array();
+    private static $_attributeNames = array();
 
     /**
-     * whether this instance is new or not
+     * @var array
+     */
+    private $_attributes = array();
+
+    /**
+     * Whether this instance is new or not
      *
      * @var bool
      */
@@ -63,6 +68,63 @@ abstract class YMongoDocument extends CModel
 
         $this->attachBehaviors($this->behaviors());
         $this->afterConstruct();
+    }
+
+    /**
+     * @param string $name
+     * @return mixed
+     */
+    public function __get($name)
+    {
+        if (isset($this->_attributes[$name])) {
+            return $this->_attributes[$name];
+        } else {
+            try {
+                return parent::__get($name);
+            } catch (CException $e) {
+                return null;
+            }
+        }
+    }
+
+    /**
+     * @param string $name
+     * @param mixed $value
+     * @return mixed
+     */
+    public function __set($name, $value)
+    {
+        try {
+            return parent::__set($name,$value);
+        } catch (CException $e) {
+            return $this->_attributes[$name] = $value;
+        }
+    }
+
+    /**
+     * @param string $name
+     * @return bool
+     */
+    public function __isset($name)
+    {
+        if (isset($this->_attributes[$name])) {
+            return true;
+        } else {
+            return parent::__isset($name);
+        }
+    }
+
+    /**
+     * @param string $name
+     * @return mixed
+     */
+    public function __unset($name)
+    {
+        if (isset($this->_attributes[$name])) {
+            unset($this->_attributes[$name]);
+        } else {
+            parent::__unset($name);
+        }
     }
 
     /**
@@ -249,12 +311,12 @@ abstract class YMongoDocument extends CModel
     {
         $className = get_class($this);
 
-        if (!isset(self::$_attributes[$className])) {
+        if (!isset(self::$_attributeNames[$className])) {
             /**
              * Initialize an empty array with the names of the attributes.
              * Static cache is still necessary, even with the finding that no attributes.
              */
-            self::$_attributes[$className] = array();
+            self::$_attributeNames[$className] = array();
 
             // Class data
             $class = new ReflectionClass($className);
@@ -264,11 +326,11 @@ abstract class YMongoDocument extends CModel
                 if ($property->isStatic()) {
                     continue;
                 }
-                self::$_attributes[$className][] = $property->getName();
+                self::$_attributeNames[$className][] = $property->getName();
             }
         }
 
-        return self::$_attributes[$className];
+        return self::$_attributeNames[$className];
     }
 
     /**
@@ -527,7 +589,7 @@ abstract class YMongoDocument extends CModel
     public function getDocument($attributes = null)
     {
         if (!is_array($attributes) || empty($attributes)) {
-            $attributes = $this->attributeNames();
+            $attributes = CMap::mergeArray($this->attributeNames(), array_keys($this->_attributes));
         }
         $document = array();
 
