@@ -170,7 +170,7 @@ class EMongoCriteria extends CComponent
      * @param bool $strong
      * @return EMongoCriteria
      */
-    public function compare($column, $value = null, $strong = false)
+    public function compare($column, $value = null, $strong = true)
     {
         if (!$value) {
             return $this;
@@ -183,11 +183,14 @@ class EMongoCriteria extends CComponent
             list(/* full expression */, $operator, $value) = $matches;
 
             // If this is not a strong compliance and not a number, create MongoRegex, and if you give a number to an int
-            if (!$strong && !preg_match('/^[0-9]+$/', $value)) {
+            if (!$strong && !preg_match('/^[0-9\.]+$/', $value)) {
                 $value = new MongoRegex('/' . preg_quote($value) . '/i');
 
-            } elseif(preg_match('/^[0-9]+$/', $value)) {
+            } elseif (preg_match('/^[0-9]+$/', $value)) {
                 $value = (int) $value;
+
+            } elseif (preg_match('/^[0-9\.]+$/', $value)) {
+                $value = (float) $value;
             }
 
             // Let us consider each operator
