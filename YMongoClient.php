@@ -120,7 +120,11 @@ class YMongoClient extends CApplicationComponent
         }
 
         // Set read preference
-        $this->mongo->setReadPreference($this->readPreference, $this->readPreferenceTags);
+        if (MongoClient::RP_PRIMARY === $this->readPreference) {
+            $this->mongo->setReadPreference($this->readPreference);
+        } else {
+            $this->mongo->setReadPreference($this->readPreference, $this->readPreferenceTags);
+        }
     }
 
     /**
