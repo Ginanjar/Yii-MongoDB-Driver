@@ -432,6 +432,23 @@ abstract class YMongoDocument extends CModel
     }
 
     /**
+     * This, in addition to YMongoModels edition, will also call scopes on the model
+     *
+     * @param string $name
+     * @param array $parameters
+     * @return mixed
+     */
+    public function __call($name, $parameters)
+    {
+        $scopes = $this->scopes();
+        if (isset($scopes[$name])) {
+            $this->setDbCriteria($this->mergeCriteria($this->_criteria, $scopes[$name]));
+            return $this;
+        }
+        return parent::__call($name, $parameters);
+    }
+
+    /**
      * The scope attached to this model
      *
      * @example
