@@ -839,6 +839,16 @@ abstract class YMongoDocument extends CModel
     }
 
     /**
+     * @param string $attribute
+     * @return bool
+     */
+    public function hasAttribute($attribute)
+    {
+        $attributes = CMap::mergeArray($this->attributeNames(), array_keys($this->_attributes));
+        return in_array($attribute, $attributes);
+    }
+
+    /**
      * Returns the static model of the specified AR class.
      *
      * EVERY derived AR class must override this method as follows,
