@@ -20,7 +20,10 @@ class EMongoCursor implements Iterator, Countable
      */
     public $model;
 
-    private $cursor = array();
+    /**
+     * @var MongoCursor
+     */
+    private $cursor;
 
     /**
      * Current EMongoDocument document
