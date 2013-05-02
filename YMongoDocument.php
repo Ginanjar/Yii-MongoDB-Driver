@@ -297,6 +297,126 @@ abstract class YMongoDocument extends CModel
     }
 
     /**
+     * Update record by PK
+     *
+     * @param string|MongoId $pk
+     * @param array $updateDoc
+     * @param array|YMongoCriteria $criteria
+     * @param array $options
+     * @return bool
+     */
+    public function updateByPk($pk, $updateDoc = array(), $criteria = array(), $options = array())
+    {
+        Yii::trace(get_class($this).'.updateByPk()', 'ext.mongoDb.YMongoDocument');
+
+        if ($criteria instanceof YMongoCriteria) {
+            $criteria = $criteria->getCondition();
+        }
+
+        try {
+            $res = $this->getCollection()->update(
+                $this->mergeCriteria(
+                    $criteria,
+                    array($this->primaryKey() => $this->getPrimaryKey($pk))
+                ),
+                $updateDoc,
+                CMap::mergeArray(
+                    $this->getConnection()->getDefaultWriteConcern(),
+                    $options
+                )
+            );
+
+            /**
+             * Returns an array containing the status of the update if the "w" option is set.
+             * Otherwise, returns TRUE.
+             */
+            if (true === $res || (is_array($res) && !empty($res['ok']))) {
+                return true;
+            }
+        } catch (Exception $e) { }
+
+        return false;
+    }
+
+    /**
+     * UpSert record by PK
+     *
+     * @param string|MongoId $pk
+     * @param array $updateDoc
+     * @param array $criteria
+     * @param array $options
+     * @return bool
+     */
+    public function upsertByPk($pk, $updateDoc = array(), $criteria = array(), $options = array())
+    {
+        Yii::trace(get_class($this).'.upsertByPk()', 'ext.mongoDb.YMongoDocument');
+        return $this->updateByPk($pk, array('$set' => $updateDoc), $criteria, CMap::mergeArray($options, array('upsert' => true)));
+    }
+
+    /**
+     * Update all records matching a criteria
+     *
+     * @param array|YMongoCriteria $criteria
+     * @param array $updateDoc
+     * @param array $options
+     * @return bool
+     */
+    public function updateAll($criteria = array(), $updateDoc = array(), $options = array('multiple' => true))
+    {
+        Yii::trace(get_class($this).'.updateAll()', 'ext.mongoDb.YMongoDocument');
+
+        if ($criteria instanceof YMongoCriteria) {
+            $criteria = $criteria->getCondition();
+        }
+
+        try {
+            $res = $this->getCollection()->update(
+                $criteria,
+                $updateDoc,
+                CMap::mergeArray(
+                    $this->getConnection()->getDefaultWriteConcern(),
+                    $options
+                )
+            );
+
+            /**
+             * Returns an array containing the status of the update if the "w" option is set.
+             * Otherwise, returns TRUE.
+             */
+            if (true === $res || (is_array($res) && !empty($res['ok']))) {
+                return true;
+            }
+        } catch (Exception $e) { }
+
+        return false;
+    }
+
+    /**
+     * Saves one or several counter columns for the current AR object.
+     *
+     * @param array $counters
+     * @return bool
+     * @throws YMongoException
+     */
+    public function saveCounters(array $counters)
+    {
+        if ($this->getIsNewRecord()) {
+            throw new YMongoException(Yii::t('yii', 'The active record cannot be updated because it is new.'));
+        }
+
+        Yii::trace(get_class($this).'.saveCounters()', 'ext.mongoDb.YMongoDocument');
+
+        if (sizeof($counters) > 0) {
+            foreach($counters as $k => $v) {
+                $this->{$k} = $this->{$k} + $v;
+            }
+            return $this->updateByPk($this->{$this->primaryKey()}, array('$inc' => $counters));
+        }
+
+        return false;
+    }
+
+    /**
      * Find one record
      *
      * @param array|YMongoCriteria $criteria
@@ -383,12 +503,6 @@ abstract class YMongoDocument extends CModel
             return new YMongoCursor($this, $criteria);
         }
     }
-
-
-
-
-
-
 
     /**
      * @return YMongoDocument
