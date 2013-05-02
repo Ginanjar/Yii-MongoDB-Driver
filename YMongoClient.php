@@ -205,4 +205,15 @@ class YMongoClient extends CApplicationComponent
             throw YMongoException::copy($e);
         }
     }
+
+    /**
+     * @param mixed $code
+     * @param array $args
+     * @return mixed
+     */
+    public function execute($code, array $args = array())
+    {
+        $response = $this->getDatabase()->execute($code, $args);
+        return empty($response['ok']) ? false : $response['retval'];
+    }
 }
