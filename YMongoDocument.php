@@ -442,6 +442,27 @@ abstract class YMongoDocument extends CModel
     }
 
     /**
+     * Checks if a record exists in the database
+     *
+     * @param array|YMongoCriteria $criteria
+     * @return bool
+     */
+    public function exists($criteria = array())
+    {
+        Yii::trace(get_class($this).'.exists()', 'ext.mongoDb.YMongoDocument');
+
+        if ($criteria instanceof YMongoCriteria) {
+            $criteria = $criteria->getCondition();
+        }
+
+        try {
+            return null !== $this->getCollection()->findOne($criteria);
+        } catch (Exception $e) { }
+
+        return false;
+    }
+
+    /**
      * Find one record
      *
      * @param array|YMongoCriteria $criteria
