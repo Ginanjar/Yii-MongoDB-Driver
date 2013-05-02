@@ -78,12 +78,12 @@ class EMongoCursor implements Iterator, Countable
      * Gets the active record for the current row
      *
      * @return EMongoDocument
-     * @throws CException
+     * @throws EMongoException
      */
     public function current()
     {
         if (null === $this->model) {
-            throw new CException(Yii::t('yii', "The MongoCursor must have a model"));
+            throw new EMongoException(Yii::t('yii', "The MongoCursor must have a model"));
         }
         return $this->current = $this->model->populateRecord($this->cursor()->current());
     }
@@ -138,6 +138,6 @@ class EMongoCursor implements Iterator, Countable
         if ($cursor instanceof MongoCursor && method_exists($cursor, $method)){
             return call_user_func_array(array($cursor, $method), $params);
         }
-        throw new CException(Yii::t('yii', "Call to undefined function {method} on the cursor", array('{method}' => $method)));
+        throw new EMongoException(Yii::t('yii', "Call to undefined function {method} on the cursor", array('{method}' => $method)));
     }
 }

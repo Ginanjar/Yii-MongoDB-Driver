@@ -257,7 +257,7 @@ class EMongoDocument extends EMongoModel
      *
      * @param array $attributes
      * @return bool
-     * @throws CException
+     * @throws EMongoException
      */
     public function saveAttributes($attributes)
     {
@@ -284,24 +284,24 @@ class EMongoDocument extends EMongoModel
             $pk = $this->primaryKey();
 
             if (!isset($this->{$pk}) || $this->{$pk} === null) {
-                throw new CException(Yii::t('yii','The active record cannot be updated because its _id is not set!'));
+                throw new EMongoException(Yii::t('yii','The active record cannot be updated because its _id is not set!'));
             }
 
             return $this->updateByPk($this->{$pk}, $values);
         }
-        throw new CException(Yii::t('yii','The active record cannot be updated because it is new.'));
+        throw new EMongoException(Yii::t('yii','The active record cannot be updated because it is new.'));
     }
 
     /**
      * Inserts this record
      *
      * @return bool
-     * @throws CException
+     * @throws EMongoException
      */
     public function insert()
     {
         if (!$this->getIsNewRecord()) {
-            throw new CException(Yii::t('yii','The active record cannot be inserted to database because it is not new.'));
+            throw new EMongoException(Yii::t('yii','The active record cannot be inserted to database because it is not new.'));
         }
 
         if ($this->beforeSave()) {
@@ -330,12 +330,12 @@ class EMongoDocument extends EMongoModel
      *
      * @param array $attributes
      * @return bool
-     * @throws CException
+     * @throws EMongoException
      */
     public function update($attributes = null)
     {
         if ($this->getIsNewRecord()) {
-            throw new CException(Yii::t('yii','The active record cannot be updated because it is new.'));
+            throw new EMongoException(Yii::t('yii','The active record cannot be updated because it is new.'));
         }
 
         if ($this->beforeSave()) {
@@ -344,7 +344,7 @@ class EMongoDocument extends EMongoModel
             $pk = $this->primaryKey();
 
             if(null === $this->{$pk}) {
-                throw new CException(Yii::t('yii','The active record cannot be updated because it has no _id.'));
+                throw new EMongoException(Yii::t('yii','The active record cannot be updated because it has no _id.'));
             }
 
             if (null !== $attributes) {
@@ -412,14 +412,14 @@ class EMongoDocument extends EMongoModel
      *
      * @param array $counters
      * @return bool
-     * @throws CException
+     * @throws EMongoException
      */
     public function saveCounters(array $counters)
     {
         $this->trace(__FUNCTION__);
 
         if ($this->getIsNewRecord()) {
-            throw new CException(Yii::t('yii', 'The active record cannot be updated because it is new.'));
+            throw new EMongoException(Yii::t('yii', 'The active record cannot be updated because it is new.'));
         }
 
         if (sizeof($counters)>0) {
@@ -457,12 +457,12 @@ class EMongoDocument extends EMongoModel
      * Deletes this record
      *
      * @return bool
-     * @throws CException
+     * @throws EMongoException
      */
     public function delete()
     {
         if ($this->getIsNewRecord()) {
-            throw new CException(Yii::t('yii','The active record cannot be deleted because it is new.'));
+            throw new EMongoException(Yii::t('yii','The active record cannot be deleted because it is new.'));
         }
 
         $this->trace(__FUNCTION__);
@@ -653,7 +653,7 @@ class EMongoDocument extends EMongoModel
      */
     public function getCollection()
     {
-        return $this->getConnection()->selectCollection($this->collectionName());
+        return $this->getConnection()->getCollection($this->collectionName());
     }
 
     /**

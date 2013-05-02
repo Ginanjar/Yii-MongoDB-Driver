@@ -34,6 +34,11 @@ class EMongoCriteria extends CComponent
     private $limit = 0;
 
     /**
+     * @var array
+     */
+    private $allowItems = array('condition', 'limit', 'skip', 'sort');
+
+    /**
      * Initialization is made by analogy with CDbCriteria
      *
      * @param array $data
@@ -41,7 +46,9 @@ class EMongoCriteria extends CComponent
     public function __construct(array $data = array())
     {
         foreach ($data as $name => $value) {
-            $this->$name = $value;
+            if (in_array($name, $this->allowItems)) {
+                $this->$name = $value;
+            }
         }
     }
 
@@ -279,7 +286,7 @@ class EMongoCriteria extends CComponent
         if (true === $onlyCondition) {
             $result = $this->getCondition();
         } else {
-            foreach (array('condition', 'limit', 'skip', 'sort') as $name) {
+            foreach ($this->allowItems as $name) {
                 $result[$name] = $this->$name;
             }
         }

@@ -335,7 +335,7 @@ class EMongoModel extends CModel
      * Returns the database connection used by active record.
      *
      * @return EMongoClient
-     * @throws CException
+     * @throws EMongoException
      */
     public function getConnection()
     {
@@ -351,7 +351,7 @@ class EMongoModel extends CModel
             return self::$db;
         }
 
-        throw new CException(Yii::t('yii','MongoDB Active Record requires a "mongodb" EMongoClient application component.'));
+        throw new EMongoException(Yii::t('yii','MongoDB Active Record requires a "mongodb" EMongoClient application component.'));
     }
 
     /**
