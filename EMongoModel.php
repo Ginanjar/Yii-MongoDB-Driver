@@ -2,20 +2,6 @@
 
 class EMongoModel extends CModel
 {
-    private $mongoTypes = array(
-        'MongoId',
-        'MongoCode',
-        'MongoDate',
-        'MongoRegex',
-        'MongoBinData',
-        'MongoInt32',
-        'MongoInt64',
-        'MongoDBRef',
-        'MongoMinKey',
-        'MongoMaxKey',
-        'MongoTimestamp',
-    );
-
     /**
      * @var
      */
@@ -208,18 +194,29 @@ class EMongoModel extends CModel
         $attributes = array_flip($safeOnly ? $this->getSafeAttributeNames() : $this->attributeNames());
 
         foreach ($values as $name => $value) {
-            
-            $isMongoType = 'object' === gettype($value) && in_array(get_class($value), $this->mongoTypes);
 
-            if ($safeOnly) {
-                if (isset($attributes[$name])) {
-                    $this->$name= !$isMongoType && !is_array($value) && preg_match('/^[0-9]+$/', $value) > 0 ? (int) $value : $value;
+            if (isset($attributes[$name])) {
+
+                // Is this value is Mongo type?
+                $isMongoType = 'object' === gettype($value) && 0 === strpos(get_class($value), 'Mongo');
+
+                // Not Mongo, not array, and got only numbers & dot
+                if (!$isMongoType && !is_array($value) && preg_match('/^[0-9\.]+$/', $value)) {
+
+                    // Integer seemed
+                    if (preg_match('/^[0-9]+$/', $value)) {
+                        $this->{$name} = (int) $value;
+                    }
+                    // Float
+                    elseif (preg_match('/^[0-9]+$/', $value)) {
+                        $this->{$name} = (float) $value;
+                    }
+
+                } else {
+                    $this->{$name} = $value;
                 }
-                elseif ($safeOnly) {
-                    $this->onUnsafeAttribute($name, $value);
-                }
-            } else {
-                $this->$name= !$isMongoType &&  !is_array($value) && preg_match('/^[0-9]+$/', $value) > 0 ? (int) $value : $value;
+            } elseif ($safeOnly) {
+                $this->onUnsafeAttribute($name, $value);
             }
         }
     }
