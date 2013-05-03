@@ -522,18 +522,18 @@ class YMongoCommand extends CComponent
      * will take precedence over the $excludes array.
      * If you want to only choose fields to exclude, leave $includes an empty array().
      *
-     * @param array $includes
-     * @param array $excludes
+     * @param array|string $includes
+     * @param array|string $excludes
      * @return YMongoCommand
      */
     public function select($includes = array(), $excludes = array())
     {
         if (!is_array($includes)) {
-            $includes = array();
+            $includes = array($includes);
         }
 
         if (!is_array($excludes)) {
-            $excludes = array();
+            $excludes = array($excludes);
         }
 
         if (!empty($includes)) {
