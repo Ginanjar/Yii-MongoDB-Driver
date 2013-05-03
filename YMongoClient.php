@@ -183,6 +183,15 @@ class YMongoClient extends CApplicationComponent
     }
 
     /**
+     * @param string $collectionName
+     * @return YMongoCommand
+     */
+    public function createCommand($collectionName = null)
+    {
+        return new YMongoCommand($this, $collectionName);
+    }
+
+    /**
      * ---------------------------
      * Wrappers for DB function
      * ---------------------------

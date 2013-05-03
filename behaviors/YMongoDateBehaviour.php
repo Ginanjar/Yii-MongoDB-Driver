@@ -30,19 +30,7 @@ class YMongoDateBehaviour extends CActiveRecordBehavior
             if (!$owner->hasAttribute($attribute)) {
                 continue;
             }
-            if (!($owner->{$attribute} instanceof MongoDate)) {
-                $currentValue = $owner->{$attribute};
-
-                if (is_string($currentValue)) {
-                    $owner->{$attribute} = new MongoDate(strtotime($currentValue));
-                }
-                elseif (is_int($currentValue)) {
-                    $owner->{$attribute} = new MongoDate($currentValue);
-                }
-                else {
-                    $owner->{$attribute} = new MongoDate();
-                }
-            }
+            $owner->{$attribute} = YMongoCommand::mDate($owner->{$attribute});
         }
     }
 }
