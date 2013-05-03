@@ -145,6 +145,23 @@ abstract class YMongoDocument extends CModel
     }
 
     /**
+     * @param bool $asString
+     * @return MongoId|string
+     */
+    public function getId($asString = false)
+    {
+        return $asString ? $this->_id->__toString() : $this->_id;
+    }
+
+    /**
+     * @param MongoId|string $id
+     */
+    public function setId($id)
+    {
+        $this->_id = ($id instanceof MongoId) ? $id : new MongoId($id);
+    }
+
+    /**
      * Returns if the current record is new.
      *
      * @return bool
