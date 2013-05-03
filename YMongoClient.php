@@ -216,4 +216,14 @@ class YMongoClient extends CApplicationComponent
         $response = $this->getDatabase()->execute($code, $args);
         return empty($response['ok']) ? false : $response['retval'];
     }
+
+    /**
+     * @param array $command
+     * @param array $options
+     * @return array
+     */
+    public function command(array $command, array $options = array())
+    {
+        return $this->getDatabase()->command($command, $options);
+    }
 }
