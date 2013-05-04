@@ -97,7 +97,7 @@ class YMongoUniqueValidator extends CValidator
             ->findOne(CMap::mergeArray(
                 $this->criteria,
                 array(
-                    $attributeName => $this->caseSensitive ? $value : new MongoRegex('/' . quotemeta($value) . '/i')
+                    $attributeName => $this->caseSensitive ? $value : new MongoRegex('/^' . quotemeta($value) . '$/i')
                 )
             ));
 
