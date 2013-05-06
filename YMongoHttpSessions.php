@@ -154,7 +154,7 @@ class YMongoHttpSessions extends CHttpSession
     public function writeSession($id, $data)
     {
         try {
-            $expire = time() + $this->getTimeout();
+            $expire = YMongoCommand::mDate(time() + $this->getTimeout());
 
             // Mongo command instance
             $command = $this->getConnection()->createCommand($this->collectionName);
