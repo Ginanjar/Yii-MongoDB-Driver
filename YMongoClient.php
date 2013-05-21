@@ -9,6 +9,14 @@ if (version_compare(phpversion('mongo'), '1.3.0', '<')) {
     throw new CException('Please update MongoDB driver to version 1.3.0 or earlier.');
 }
 
+// Set MongoDb settings
+if ((bool) ini_get('mongo.long_as_object')) {
+    ini_set('mongo.long_as_object', 0);
+}
+if (! (bool) ini_get('mongo.native_long')) {
+    ini_set('mongo.native_long', 1);
+}
+
 class YMongoClient extends CApplicationComponent
 {
     /**

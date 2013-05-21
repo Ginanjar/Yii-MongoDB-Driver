@@ -699,7 +699,7 @@ abstract class YMongoDocument extends CModel
         $record->attachBehaviors($record->behaviors());
 
         if ($callAfterFind) {
-            $this->afterFind();
+            $record->afterFind();
         }
 
         return $record;
