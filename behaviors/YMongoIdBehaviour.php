@@ -3,6 +3,7 @@
 class YMongoIdBehaviour extends CActiveRecordBehavior
 {
     public $idAttributes = array();
+    public $skipNull = true;
 
     /**
      * @param CModelEvent $event
@@ -18,6 +19,9 @@ class YMongoIdBehaviour extends CActiveRecordBehavior
 
         foreach ($this->idAttributes as $attribute) {
             if (!$owner->hasAttribute($attribute)) {
+                continue;
+            }
+            if ($this->skipNull && null === $owner->{$attribute}) {
                 continue;
             }
             if (!($owner->{$attribute} instanceof MongoId)) {
