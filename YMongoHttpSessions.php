@@ -17,6 +17,20 @@ class YMongoHttpSessions extends CHttpSession
     public $collectionName = 'yii_session';
 
     /**
+     * Save session data as binary object
+     *
+     * @var bool
+     */
+    public $saveAsBinary = false;
+
+    /**
+     * Type of mongo binary data (@see MongoBinData)
+     *
+     * @var int
+     */
+    public $binaryType = MongoBinData::BYTE_ARRAY;
+
+    /**
      * The MongoDB connection instance
      *
      * @var YMongoClient
@@ -138,7 +152,7 @@ class YMongoHttpSessions extends CHttpSession
                 ->whereGt('expire', YMongoCommand::mDate())
                 ->getOne();
             $data = isset($item['data']) ? $item['data'] : '';
-            Yii::trace('User session (' . $id . ') write successfully finished. Data: ' . print_r($data, true), 'ext.mongoDb.YMongoHttpSessions');
+            Yii::trace('User session (' . $id . ') read successfully finished. Data: ' . print_r($data, true), 'ext.mongoDb.YMongoHttpSessions');
             return $data;
         } catch (Exception $e) {
             Yii::log('User session (' . $id . ') read FAILED: ' . $e->getMessage(), CLogger::LEVEL_ERROR, 'ext.mongoDb.YMongoHttpSessions');
@@ -161,6 +175,10 @@ class YMongoHttpSessions extends CHttpSession
 
             // Mongo command instance
             $command = $this->getConnection()->createCommand($this->collectionName);
+
+            if ($this->saveAsBinary) {
+                $data = new MongoBinData($data, $this->binaryType);
+            }
 
             // Update if already exists
             if ($command->getOneWhere(array('_id' => $id))) {
