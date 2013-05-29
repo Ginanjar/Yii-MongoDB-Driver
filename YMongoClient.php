@@ -96,6 +96,8 @@ class YMongoClient extends CApplicationComponent
      */
     public function init()
     {
+        Yii::trace('MongoDb driver is initialized.', 'ext.mongoDb.YMongoClient');
+
         parent::init();
 
         if (!is_array($this->options)) {
@@ -126,6 +128,8 @@ class YMongoClient extends CApplicationComponent
         catch(Exception $e) { /** MongoConnectionException */
             throw YMongoException::copy($e);
         }
+
+        Yii::trace('MongoDb connected (' . $this->server . ').', 'ext.mongoDb.YMongoClient');
 
         // Set read preference
         if (MongoClient::RP_PRIMARY === $this->readPreference) {
@@ -174,6 +178,8 @@ class YMongoClient extends CApplicationComponent
         catch (Exception $e) {
             throw YMongoException::copy($e);
         }
+
+        Yii::trace('MongoDb database selected (' . $dbName . ').', 'ext.mongoDb.YMongoClient');
     }
 
     /**

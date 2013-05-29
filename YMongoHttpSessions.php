@@ -137,8 +137,11 @@ class YMongoHttpSessions extends CHttpSession
                 ->where('_id', $id)
                 ->whereGt('expire', YMongoCommand::mDate())
                 ->getOne();
-            return isset($item['data']) ? $item['data'] : '';
+            $data = isset($item['data']) ? $item['data'] : '';
+            Yii::trace('User session (' . $id . ') write successfully finished. Data: ' . print_r($data, true), 'ext.mongoDb.YMongoHttpSessions');
+            return $data;
         } catch (Exception $e) {
+            Yii::log('User session (' . $id . ') read FAILED: ' . $e->getMessage(), CLogger::LEVEL_ERROR, 'ext.mongoDb.YMongoHttpSessions');
             return '';
         }
     }
@@ -174,8 +177,10 @@ class YMongoHttpSessions extends CHttpSession
                     'expire' => $expire,
                 ));
             }
+            Yii::trace('User session (' . $id . ') write successfully finished. Data: ' . print_r($data, true), 'ext.mongoDb.YMongoHttpSessions');
             return true;
         } catch (Exception $e) {
+            Yii::log('User session (' . $id . ') write FAILED: ' . $e->getMessage(), CLogger::LEVEL_ERROR, 'ext.mongoDb.YMongoHttpSessions');
             return false;
         }
     }
@@ -194,8 +199,10 @@ class YMongoHttpSessions extends CHttpSession
                 ->createCommand($this->collectionName)
                 ->where('_id', $id)
                 ->delete();
+            Yii::trace('User session (' . $id . ') destroy successfully finished.', 'ext.mongoDb.YMongoHttpSessions');
             return true;
         } catch (Exception $e) {
+            Yii::log('User session (' . $id . ') destroy FAILED: ' . $e->getMessage(), CLogger::LEVEL_ERROR, 'ext.mongoDb.YMongoHttpSessions');
             return false;
         }
     }
@@ -214,8 +221,10 @@ class YMongoHttpSessions extends CHttpSession
                 ->createCommand($this->collectionName)
                 ->whereLt('expire', YMongoCommand::mDate())
                 ->deleteAll();
+            Yii::trace('Garbage collection of user session successfully finished.', 'ext.mongoDb.YMongoHttpSessions');
             return true;
         } catch (Exception $e) {
+            Yii::log('Garbage collection of user session FAILED: ' . $e->getMessage(), CLogger::LEVEL_ERROR, 'ext.mongoDb.YMongoHttpSessions');
             return false;
         }
     }
