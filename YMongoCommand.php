@@ -190,6 +190,9 @@ class YMongoCommand extends CComponent
 
         $collection = $this->getCollection();
 
+        // Start profiling
+        $profile = $this->beginProfile($action, $collection);
+
         // What the function do i need?
         if ($one) {
             $res = $this->getConnection()
@@ -209,11 +212,19 @@ class YMongoCommand extends CComponent
 
         // Only one document
         if ($one) {
+            // End profiling
+            if ($profile) {
+                $this->endProfile($profile);
+            }
             return $res;
         }
 
         // Return raw MongoCursor
         if (true === $returnCursor) {
+            // End profiling
+            if ($profile) {
+                $this->endProfile($profile);
+            }
             return $res;
         }
 
@@ -227,6 +238,10 @@ class YMongoCommand extends CComponent
             catch (Exception $e) { }
         }
 
+        // End profiling
+        if ($profile) {
+            $this->endProfile($profile);
+        }
         return $documents;
     }
 
@@ -242,6 +257,9 @@ class YMongoCommand extends CComponent
 
         $collection = $this->getCollection();
 
+        // Start profiling
+        $profile = $this->beginProfile('count', $collection);
+
         $count = $this->getConnection()
             ->getCollection($collection)
             ->find($this->_wheres, $this->_selects)
@@ -250,6 +268,11 @@ class YMongoCommand extends CComponent
             ->count();
 
         $this->clear($collection, 'count');
+
+        // End profiling
+        if ($profile) {
+            $this->endProfile($profile);
+        }
 
         return $count;
     }
@@ -272,24 +295,40 @@ class YMongoCommand extends CComponent
         $this->prepareCollection($collectionName);
 
         try {
+            $collection = $this->getCollection();
+
+            // Start profiling
+            $profile = $this->beginProfile('insert', $collection, $document);
+
             $res = $this->getConnection()
-                ->getCollection($this->getCollection())
+                ->getCollection($collection)
                 ->insert(
                     $document,
                     $this->getWriteOptions($options)
                 );
+
+            // End profiling
+            if ($profile) {
+                $this->endProfile($profile);
+            }
+
+            // End profiling
+            if ($profile) {
+                $this->endProfile($profile);
+            }
+
             /**
              * Returns an array containing the status of the insertion if the "w" option is set.
              * Otherwise, returns TRUE if the inserted array is not empty
              */
             if (true === $res || (is_array($res) && !empty($res['ok']))) {
                 return isset($document['_id']) ? $document['_id'] : false;
+            } else {
+                return false;
             }
         } catch (Exception $e) {
             throw new YMongoException('Insert of data into MongoDB failed: ' . $e->getMessage());
         }
-
-        return false;
     }
 
     /**
@@ -310,12 +349,23 @@ class YMongoCommand extends CComponent
         $this->prepareCollection($collectionName);
 
         try {
+            $collection = $this->getCollection();
+
+            // Start profiling
+            $profile = $this->beginProfile('batchInsert', $collection, sizeof($documents) . ' documents');
+
             $res = $this->getConnection()
-                ->getCollection($this->getCollection())
+                ->getCollection($collection)
                 ->batchInsert(
                     $documents,
                     $this->getWriteOptions($options)
                 );
+
+            // End profiling
+            if ($profile) {
+                $this->endProfile($profile);
+            }
+
             /**
              * If the w parameter is set to acknowledge the write, returns an associative array with the status
              * of the inserts ("ok") and any error that may have occurred ("err").
@@ -323,12 +373,12 @@ class YMongoCommand extends CComponent
              */
             if (true === $res || (is_array($res) && !empty($res['ok']))) {
                 return true;
+            } else {
+                return false;
             }
         } catch (Exception $e) {
             throw new YMongoException('Insert of data into MongoDB failed: ' . $e->getMessage());
         }
-
-        return false;
     }
 
     /**
@@ -379,6 +429,9 @@ class YMongoCommand extends CComponent
         try {
             $collection = $this->getCollection();
 
+            // Start profiling
+            $profile = $this->beginProfile($action, $collection);
+
             $res = $this->getConnection()
                 ->getCollection($collection)
                 ->update(
@@ -387,6 +440,12 @@ class YMongoCommand extends CComponent
                     $this->getWriteOptions($options)
                 );
             $this->clear($collection, $action);
+
+            // End profiling
+            if ($profile) {
+                $this->endProfile($profile);
+            }
+
             /**
              * Returns an array containing the status of the update if the "w" option is set. Otherwise, returns TRUE.
              */
@@ -397,12 +456,12 @@ class YMongoCommand extends CComponent
                 }
 
                 return true;
+            } else {
+                return false;
             }
         } catch (Exception $e) {
             throw new YMongoException('Update of data into MongoDB failed: ' . $e->getMessage());
         }
-
-        return false;
     }
 
     /**
@@ -445,6 +504,9 @@ class YMongoCommand extends CComponent
         try {
             $collection = $this->getCollection();
 
+            // Start profiling
+            $profile = $this->beginProfile($action, $collection);
+
             $this->getConnection()
                 ->getCollection($collection)
                 ->remove(
@@ -452,6 +514,12 @@ class YMongoCommand extends CComponent
                     $this->getWriteOptions($options)
                 );
             $this->clear($collection, $action);
+
+            // End profiling
+            if ($profile) {
+                $this->endProfile($profile);
+            }
+
             return true;
         } catch (Exception $e) {
             throw new YMongoException('Delete of data into MongoDB failed: ' . $e->getMessage());
@@ -1068,6 +1136,42 @@ class YMongoCommand extends CComponent
             $this->getConnection()->getDefaultWriteConcern(),
             $options
         );
+    }
+
+    /**
+     * @param string $action
+     * @param string $collection
+     * @param mixed $profile
+     * @return bool|string
+     */
+    private function beginProfile($action, $collection, $profile = null)
+    {
+        if (YII_DEBUG) {
+            if (null === $profile) {
+                $profile = 'MongoCommand "' . $action . '" from: ' . $collection .
+                    ', update: ' . print_r($this->_updates, true) .
+                    ', where: ' . print_r($this->_wheres, true) .
+                    ', select: ' . print_r($this->_selects, true) .
+                    ', limit: ' . print_r($this->_limit, true) .
+                    ', offset: ' . print_r($this->_offset, true) .
+                    ', sort: ' . print_r($this->_sorts, true);
+            }
+            // Non-scalar print_r
+            elseif (!is_scalar($profile)) {
+                $profile = print_r($profile, true);
+            }
+            Yii::beginProfile($profile, 'YMongoCommand');
+            return $profile;
+        }
+        return false;
+    }
+
+    /**
+     * @param string $profile
+     */
+    private function endProfile($profile)
+    {
+        Yii::endProfile($profile, 'YMongoCommand');
     }
 
     /**

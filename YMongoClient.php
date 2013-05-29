@@ -96,7 +96,9 @@ class YMongoClient extends CApplicationComponent
      */
     public function init()
     {
-        Yii::trace('MongoDb driver is initialized.', 'ext.mongoDb.YMongoClient');
+        if (YII_DEBUG) {
+            Yii::trace('MongoDb driver is initialized.', 'ext.mongoDb.YMongoClient');
+        }
 
         // Load classes
         Yii::setPathOfAlias('mongoDb', dirname(__FILE__));
@@ -135,7 +137,9 @@ class YMongoClient extends CApplicationComponent
             throw YMongoException::copy($e);
         }
 
-        Yii::trace('MongoDb connected (' . $this->server . ').', 'ext.mongoDb.YMongoClient');
+        if (YII_DEBUG) {
+            Yii::trace('MongoDb connected (' . $this->server . ').', 'ext.mongoDb.YMongoClient');
+        }
 
         // Set read preference
         if (MongoClient::RP_PRIMARY === $this->readPreference) {
@@ -185,7 +189,9 @@ class YMongoClient extends CApplicationComponent
             throw YMongoException::copy($e);
         }
 
-        Yii::trace('MongoDb database selected (' . $dbName . ').', 'ext.mongoDb.YMongoClient');
+        if (YII_DEBUG) {
+            Yii::trace('MongoDb database selected (' . $dbName . ').', 'ext.mongoDb.YMongoClient');
+        }
     }
 
     /**
