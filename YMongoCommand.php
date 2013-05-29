@@ -1146,24 +1146,53 @@ class YMongoCommand extends CComponent
      */
     private function beginProfile($action, $collection, $profile = null)
     {
-        if (YII_DEBUG) {
+        if ($this->getConnection()->enableProfiling) {
             if (null === $profile) {
-                $profile = 'MongoCommand "' . $action . '" from: ' . $collection .
-                    ', update: ' . print_r($this->_updates, true) .
-                    ', where: ' . print_r($this->_wheres, true) .
-                    ', select: ' . print_r($this->_selects, true) .
-                    ', limit: ' . print_r($this->_limit, true) .
-                    ', offset: ' . print_r($this->_offset, true) .
-                    ', sort: ' . print_r($this->_sorts, true);
+                $profile = 'MongoCommand "' . $action . '" from: ' . $collection;
+                if (!empty($this->_updates)) {
+                    $profile .= ', update: ' . $this->makeMeShorterProfile($this->_updates);
+                }
+                if (!empty($this->_wheres)) {
+                    $profile .= ', where: ' . $this->makeMeShorterProfile($this->_wheres);
+                }
+                if (!empty($this->_selects)) {
+                    $profile .= ', select: ' . $this->makeMeShorterProfile($this->_selects);
+                }
+                if (0 !== $this->_offset) {
+                    $profile .= ', offset: ' . $this->_offset;
+                }
+                if (self::MAX_LIMIT !== $this->_limit) {
+                    $profile .= ', limit: ' . $this->_limit;
+                }
+                if (!empty($this->_sorts)) {
+                    $profile .= ', sort: ' . $this->makeMeShorterProfile($this->_sorts);
+                }
             }
             // Non-scalar print_r
             elseif (!is_scalar($profile)) {
-                $profile = print_r($profile, true);
+                if (is_array($profile)) {
+                    $profile = $this->makeMeShorterProfile($profile);
+                } else {
+                    $profile = print_r($profile, true);
+                }
             }
             Yii::beginProfile($profile, 'YMongoCommand');
             return $profile;
         }
         return false;
+    }
+
+    /**
+     * @param $array
+     * @return string
+     */
+    private function makeMeShorterProfile(array $array)
+    {
+        if (($size = sizeof($array)) > 2) {
+            return print_r(array_slice($array, 0 , 2), true) . ' AND ' . ($size - 2) . ' ELEMENTS';
+        } else {
+            return print_r($array, true);
+        }
     }
 
     /**

@@ -77,6 +77,11 @@ class YMongoClient extends CApplicationComponent
     public $j = false;
 
     /**
+     * @var bool
+     */
+    public $enableProfiling = false;
+
+    /**
      * An instance of MongoClient
      *
      * @var MongoClient
