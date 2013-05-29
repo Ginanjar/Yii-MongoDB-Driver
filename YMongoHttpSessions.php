@@ -152,6 +152,9 @@ class YMongoHttpSessions extends CHttpSession
                 ->whereGt('expire', YMongoCommand::mDate())
                 ->getOne();
             $data = isset($item['data']) ? $item['data'] : '';
+            if ($this->saveAsBinary && $data instanceof MongoBinData) {
+                $data = $data->bin;
+            }
             Yii::trace('User session (' . $id . ') read successfully finished. Data: ' . print_r($data, true), 'ext.mongoDb.YMongoHttpSessions');
             return $data;
         } catch (Exception $e) {
