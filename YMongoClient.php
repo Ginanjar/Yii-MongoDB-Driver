@@ -98,6 +98,12 @@ class YMongoClient extends CApplicationComponent
     {
         Yii::trace('MongoDb driver is initialized.', 'ext.mongoDb.YMongoClient');
 
+        // Load classes
+        Yii::setPathOfAlias('mongoDb', dirname(__FILE__));
+        Yii::import('mongoDb.*');
+        Yii::import('mongoDb.behaviors.*');
+        Yii::import('mongoDb.validators.*');
+
         parent::init();
 
         if (!is_array($this->options)) {
