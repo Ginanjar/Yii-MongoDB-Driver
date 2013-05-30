@@ -312,11 +312,6 @@ class YMongoCommand extends CComponent
                 $this->endProfile($profile);
             }
 
-            // End profiling
-            if ($profile) {
-                $this->endProfile($profile);
-            }
-
             /**
              * Returns an array containing the status of the insertion if the "w" option is set.
              * Otherwise, returns TRUE if the inserted array is not empty
@@ -450,11 +445,9 @@ class YMongoCommand extends CComponent
              * Returns an array containing the status of the update if the "w" option is set. Otherwise, returns TRUE.
              */
             if (true === $res || (is_array($res) && !empty($res['ok']))) {
-
                 if (isset($res['updatedExisting'])) {
                     return $res['updatedExisting'] > 0;
                 }
-
                 return true;
             } else {
                 return false;
