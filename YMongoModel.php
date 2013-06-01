@@ -77,8 +77,7 @@ class YMongoModel extends CModel
      */
     public function hasAttribute($attribute)
     {
-        $attributes = CMap::mergeArray($this->attributeNames(), array_keys($this->_attributes));
-        return in_array($attribute, $attributes);
+        return in_array($attribute, $this->attributeNames());
     }
 
     /**
@@ -88,7 +87,7 @@ class YMongoModel extends CModel
      */
     public function attributeNames()
     {
-        return $this->getConnection()->getDocumentFields(get_class($this));
+        return array_merge($this->getConnection()->getDocumentFields(get_class($this)), array_keys($this->_attributes));
     }
 
     /**
@@ -124,7 +123,7 @@ class YMongoModel extends CModel
     public function getDocument($attributes = null)
     {
         if (!is_array($attributes) || empty($attributes)) {
-            $attributes = CMap::mergeArray($this->attributeNames(), array_keys($this->_attributes));
+            $attributes = $this->attributeNames();
         }
         $document = array();
 
