@@ -13,7 +13,7 @@ class YMongoCursor implements Iterator, Countable
     /**
      * MongoDB document
      *
-     * @var EMongoDocument
+     * @var YMongoDocument
      */
     public $model;
 
