@@ -102,6 +102,13 @@ class YMongoClient extends CApplicationComponent
      */
     private static $_attributeNames = array();
 
+    /**
+     *
+     */
+    public function __construct()
+    {
+        CValidator::$builtInValidators['mongoSubDocument'] = 'YSubDocumentValidator';
+    }
 
     /**
      * Initialize application

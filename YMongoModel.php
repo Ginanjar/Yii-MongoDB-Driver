@@ -31,6 +31,13 @@ class YMongoModel extends CModel
     private $_subDocuments = array();
 
     /**
+     * Errors moved here because of private
+     *
+     * @var array
+     */
+    private $_errors = array();
+
+    /**
      * The base model creation
      *
      * @param string $scenario
@@ -253,6 +260,17 @@ class YMongoModel extends CModel
                 break;
         }
         return $this->_subDocuments[$name] = $model;
+    }
+
+    /**
+     * Cleans or rather resets the document
+     */
+    public function clean()
+    {
+        $attributes = $this->attributeNames();
+        foreach ($attributes as $name) {
+            $this->{$name} = null;
+        }
     }
 
     /**
