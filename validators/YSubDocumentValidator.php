@@ -3,20 +3,6 @@
 class YSubDocumentValidator extends CValidator
 {
     /**
-     * Type of sub documents (one document or array of documents)
-     *
-     * @var string
-     */
-    public $type = YMongoModel::SUB_DOCUMENT_SINGLE;
-
-    /**
-     * Use this class to validate
-     *
-     * @var
-     */
-    public $className;
-
-    /**
      * Validation rules
      *
      * @var array
@@ -30,17 +16,20 @@ class YSubDocumentValidator extends CValidator
      */
     public function validateAttribute($object, $attribute)
     {
-        if (!in_array($this->type, array(YMongoModel::SUB_DOCUMENT_SINGLE, YMongoModel::SUB_DOCUMENT_MULTI))) {
-            throw new YMongoException(Yii::t('yii', 'You must supply a sub document type of either "multi" or "single" in order to validate sub documents.'));
-        }
+        // Object sub documents
+        $subDocuments = $object->subDocuments();
+        $className = isset($subDocuments[$attribute][0]) ? $subDocuments[$attribute][0] : null;
 
-        if (empty($this->rules) && empty($this->className)) {
+        if (empty($this->rules) && empty($className)) {
             throw new YMongoException(Yii::t('yii','You must supply either some rules to validate by or a class name to use.'));
         }
 
-        if ($this->className) {
+        // Determinate type of sub document
+        $type = isset($subDocuments[$attribute]['type']) ? $subDocuments[$attribute]['type'] : YMongoModel::SUB_DOCUMENT_SINGLE;
+
+        if (!empty($className)) {
             /** @var YMongoModel $model */
-            $model = new $this->className();
+            $model = new $className();
         } else {
             // Create new one
             $model = new YMongoModel();
@@ -56,7 +45,7 @@ class YSubDocumentValidator extends CValidator
             }
         }
 
-        if (YMongoModel::SUB_DOCUMENT_MULTI === $this->type) {
+        if (YMongoModel::SUB_DOCUMENT_MULTI === $type) {
             if (is_array($object->{$attribute}) || ($object->{$attribute} instanceof YMongoArrayModel)) {
                 // Error collections
                 $values = array();
