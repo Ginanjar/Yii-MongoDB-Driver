@@ -5,11 +5,6 @@
  */
 abstract class YMongoDocument extends YMongoModel
 {
-    // Behavior scenarios
-    const SCENARIO_INSERT = 'insert';
-    const SCENARIO_UPDATE = 'update';
-    const SCENARIO_SEARCH = 'search';
-
     /**
      * Default name of the Mongo primary key
      *
@@ -59,16 +54,6 @@ abstract class YMongoDocument extends YMongoModel
 
         $this->attachBehaviors($this->behaviors());
         $this->afterConstruct();
-    }
-
-    /**
-     * Initializes this model.
-     *
-     * @return bool
-     */
-    public function init()
-    {
-        return true;
     }
 
     /**
