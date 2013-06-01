@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * WARNING! Do not inherit from this class documents stored in the database.
+ * This class can be used to sub documents.
+ */
 class YMongoModel extends CModel
 {
     // Behavior scenarios

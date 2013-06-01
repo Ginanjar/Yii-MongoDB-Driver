@@ -1,7 +1,50 @@
 <?php
 
 /**
- * Class YMongoDocument
+ *
+ * Sub documents can be used like this (!!! sub documents need to extend YMongoModel class !!!):
+ *
+ * public function subDocuments() {
+ *     return array(
+ *         'attributeName1' => array('SubDocClass1', 'type' => 'single'),
+ *         'attributeName2' => array('SubDocClass2', 'type' => 'multi'),
+ *     );
+ * }
+ *
+ * To gain access to the nested document:
+ * - single:
+ *   $object->attributeName1->subAttributeName;
+ *
+ * - multi:
+ *   $object->attributeName2; // this is YMongoArrayModel Iterator
+ *
+ * - multi:
+ *   $object->attributeName2[0]->subAttributeName; // Attribute of the first sub document
+ *
+ * You can set new values to sub documents this way:
+ * - single:
+ *   $object->attributeName1 = array('subAttributeName' => 'value');
+ *
+ * - multi:
+ *   $object->attributeName2[0] = array('subAttributeName' => 'value');
+ *
+ * - multi:
+ *   $object->attributeName2 = array(
+ *       array('subAttributeName' => 'value')
+ *   );
+ *
+ * How to validate sub documents?
+ * Validation rules can be specified in the model sub document, or through parameter 'rules'.
+ *
+ * public function rules() {
+ *     return array(
+ *         array('attributeName1', 'mongoSubDocument'), // All rules must be specified in 'attributeName1' class
+ *         array('attributeName1', 'mongoSubDocument', 'rules' => array( // Or right here
+ *             array('name', 'required')
+ *         )),
+ *     );
+ * }
+ *
  */
 abstract class YMongoDocument extends YMongoModel
 {
