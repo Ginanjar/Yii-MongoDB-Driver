@@ -45,6 +45,34 @@
  *     );
  * }
  *
+ *
+ * References
+ *
+ * For example this is 'Book' class with array of ids of 'BookAuthor' in 'authors_id' field:
+ *
+ * public function relations() {
+ *     return array(
+ *         'authors' => array(YMongoModel::RELATION_MANY, 'BookAuthor', '_id', 'on' => 'authors_id'),
+ *     );
+ * }
+ *
+ * This is 'BookAuthor' class:
+ *
+ * public function relations() {
+ *     return array(
+ *          // Here no 'on' attribute because by default uses '_id' (primary key).
+ *          // In additional you can specify 'where' attribute to get more exactly result.
+ *         'books' => array(YMongoModel::RELATION_MANY, 'Book', 'authors_id', 'returnAs' => YMongoModel::RELATION_RETURN_CURSOR),
+ *     );
+ * }
+ *
+ * You can use this very simple:
+ *
+ * foreach($bookObject->authors as $author) {
+ *     // $author can be instance of BookAuthor or array or YMongoCursor
+ *     // you can specify this by 'returnAs' attribute
+ * }
+ *
  */
 abstract class YMongoDocument extends YMongoModel
 {
