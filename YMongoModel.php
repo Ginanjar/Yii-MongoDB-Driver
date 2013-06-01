@@ -387,6 +387,23 @@ class YMongoModel extends CModel
 
         // Final prepare
         if (is_array($primaryKey)) {
+            // Try to detect if primary key is MongoDBRef
+            if (MongoDBRef::isRef($primaryKey)) {
+                return $this->populateReference($primaryKey, $className);
+            }
+            // Array of MongoDBRef
+            elseif (MongoDBRef::isRef(reset($primaryKey))) {
+                $result = array();
+                foreach ($primaryKey as $singleKey) {
+                    if (MongoDBRef::isRef($singleKey)) {
+                        $item = $this->populateReference($singleKey, $className);
+                        if ($item) {
+                            $result[] = $item;
+                        }
+                    }
+                }
+                return $result;
+            }
             $clause = CMap::mergeArray($where, array($foreignKey => array('$in' => $primaryKey)));
         } else {
             $clause = CMap::mergeArray($where, array($foreignKey => $primaryKey));
