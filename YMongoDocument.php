@@ -3,19 +3,12 @@
 /**
  * Class YMongoDocument
  */
-abstract class YMongoDocument extends CModel
+abstract class YMongoDocument extends YMongoModel
 {
     // Behavior scenarios
     const SCENARIO_INSERT = 'insert';
     const SCENARIO_UPDATE = 'update';
     const SCENARIO_SEARCH = 'search';
-
-    /**
-     * By default, this is the 'mongoDb' application component.
-     *
-     * @var YMongoClient
-     */
-    public static $db;
 
     /**
      * Default name of the Mongo primary key
@@ -30,18 +23,6 @@ abstract class YMongoDocument extends CModel
      * @var array
      */
     private static $_models = array();
-
-    /**
-     * Static cache for attribute names
-     *
-     * @var array
-     */
-    private static $_attributeNames = array();
-
-    /**
-     * @var array
-     */
-    private $_attributes = array();
 
     /**
      * Whether this instance is new or not
@@ -64,6 +45,9 @@ abstract class YMongoDocument extends CModel
      */
     public function __construct($scenario = self::SCENARIO_INSERT)
     {
+        // Save document fields list in cache
+        $this->getConnection()->setDocumentCache($this);
+
         if (null === $scenario) { // Maybe from populateRecord () and model ()
             return;
         }
@@ -75,63 +59,6 @@ abstract class YMongoDocument extends CModel
 
         $this->attachBehaviors($this->behaviors());
         $this->afterConstruct();
-    }
-
-    /**
-     * @param string $name
-     * @return mixed
-     */
-    public function __get($name)
-    {
-        if (isset($this->_attributes[$name])) {
-            return $this->_attributes[$name];
-        } else {
-            try {
-                return parent::__get($name);
-            } catch (CException $e) {
-                return null;
-            }
-        }
-    }
-
-    /**
-     * @param string $name
-     * @param mixed $value
-     * @return mixed
-     */
-    public function __set($name, $value)
-    {
-        try {
-            return parent::__set($name,$value);
-        } catch (CException $e) {
-            return $this->_attributes[$name] = $value;
-        }
-    }
-
-    /**
-     * @param string $name
-     * @return bool
-     */
-    public function __isset($name)
-    {
-        if (isset($this->_attributes[$name])) {
-            return true;
-        } else {
-            return parent::__isset($name);
-        }
-    }
-
-    /**
-     * @param string $name
-     * @return mixed
-     */
-    public function __unset($name)
-    {
-        if (isset($this->_attributes[$name])) {
-            unset($this->_attributes[$name]);
-        } else {
-            parent::__unset($name);
-        }
     }
 
     /**
@@ -199,11 +126,10 @@ abstract class YMongoDocument extends CModel
     /**
      * Inserts a row into the table based on this active record attributes.
      *
-     * @param array $attributes
      * @return bool
      * @throws YMongoException
      */
-    public function insert($attributes = null)
+    public function insert()
     {
         if (!$this->getIsNewRecord()) {
             throw new YMongoException(Yii::t('yii','The active record cannot be inserted to database because it is not new.'));
@@ -825,47 +751,6 @@ abstract class YMongoDocument extends CModel
     }
 
     /**
-     * Get the names of the attributes of the class
-     *
-     * @return array
-     */
-    public function attributeNames()
-    {
-        $className = get_class($this);
-
-        if (!isset(self::$_attributeNames[$className])) {
-            /**
-             * Initialize an empty array with the names of the attributes.
-             * Static cache is still necessary, even with the finding that no attributes.
-             */
-            self::$_attributeNames[$className] = array();
-
-            // Class data
-            $class = new ReflectionClass($className);
-            $classProperties = $class->getProperties(ReflectionProperty::IS_PUBLIC);
-
-            foreach($classProperties as $property) {
-                if ($property->isStatic()) {
-                    continue;
-                }
-                self::$_attributeNames[$className][] = $property->getName();
-            }
-        }
-
-        return self::$_attributeNames[$className];
-    }
-
-    /**
-     * @param string $attribute
-     * @return bool
-     */
-    public function hasAttribute($attribute)
-    {
-        $attributes = CMap::mergeArray($this->attributeNames(), array_keys($this->_attributes));
-        return in_array($attribute, $attributes);
-    }
-
-    /**
      * Returns the static model of the specified AR class.
      *
      * EVERY derived AR class must override this method as follows,
@@ -924,28 +809,6 @@ abstract class YMongoDocument extends CModel
             $value = $this->{$this->primaryKey()};
         }
         return ($value instanceof MongoId) ? $value : new MongoId($value);
-    }
-
-    /**
-     * Returns the database connection used by active record.
-     *
-     * @return YMongoClient
-     * @throws YMongoException
-     */
-    public function getConnection()
-    {
-        if (null !== self::$db) {
-            return self::$db;
-        }
-
-        /** @var YMongoClient $db */
-        $db = Yii::app()->getComponent('mongoDb');
-
-        if ($db instanceof YMongoClient) {
-            return self::$db = $db;
-        } else {
-            throw new YMongoException(Yii::t('yii','YMongoDocument a "mongoDb" YMongoClient application component.'));
-        }
     }
 
     /**
@@ -1086,59 +949,5 @@ abstract class YMongoDocument extends CModel
         if ($this->hasEventHandler('onAfterFind')) {
             $this->onAfterFind(new CEvent($this));
         }
-    }
-
-    /**
-     * Filters a provided document to take out mongo objects.
-     *
-     * @param mixed $document
-     * @return array
-     */
-    public function filterDocument($document)
-    {
-        if (is_array($document)) {
-            /** @var $value array|YMongoDocument */
-            foreach($document as $key => $value) {
-                // Recursive
-                if (is_array($value)) {
-                    $document[$key] = $this->filterDocument($value);
-                }
-                // Nested documents does are not allowed at this time
-                elseif($value instanceof YMongoDocument) {
-                    unset($document[$key]);
-                }
-            }
-        }
-        return $document;
-    }
-
-    /**
-     * Gets the raw document with mongo objects taken out
-     *
-     * @param array $attributes
-     * @return array
-     */
-    public function getDocument($attributes = null)
-    {
-        if (!is_array($attributes) || empty($attributes)) {
-            $attributes = CMap::mergeArray($this->attributeNames(), array_keys($this->_attributes));
-        }
-        $document = array();
-
-        foreach($attributes as $field) {
-            $document[$field] = $this->{$field};
-        }
-
-        return $this->filterDocument($document);
-    }
-
-    /**
-     * Gets the JSON encoded document
-     *
-     * @return string
-     */
-    public function getJSONDocument()
-    {
-        return CJSON::encode($this->getDocument());
     }
 }

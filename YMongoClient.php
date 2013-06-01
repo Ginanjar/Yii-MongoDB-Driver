@@ -95,6 +95,13 @@ class YMongoClient extends CApplicationComponent
      */
     private $db;
 
+    /**
+     * Static cache for attribute names
+     *
+     * @var array
+     */
+    private static $_attributeNames = array();
+
 
     /**
      * Initialize application
@@ -265,5 +272,82 @@ class YMongoClient extends CApplicationComponent
     public function command(array $command, array $options = array())
     {
         return $this->getDatabase()->command($command, $options);
+    }
+
+    public function setDocumentCache($object)
+    {
+        if (!is_object($object)) {
+            return;
+        }
+
+        $objectName = get_class($object);
+        if (!isset(self::$_attributeNames[$objectName])) {
+            /**
+             * Initialize an empty array with the names of the attributes.
+             * Static cache is still necessary, even with the finding that no attributes.
+             */
+            self::$_attributeNames[$objectName] = array();
+
+            // Class data
+            $class = new ReflectionClass($objectName);
+            $classProperties = $class->getProperties(ReflectionProperty::IS_PUBLIC);
+
+            foreach($classProperties as $property) {
+                if ($property->isStatic()) {
+                    continue;
+                }
+
+                // Property comments
+                $docComment = $property->getDocComment();
+
+                // Detect type of field
+                $type = false;
+                if (preg_match('/@var ([a-zA-Z0-9_]+)/', $docComment, $matches)) {
+                    $type = $matches[1];
+                }
+
+                self::$_attributeNames[$objectName][] = array(
+                    'name' => $property->getName(),
+                    'virtual' => $property->isProtected() || (bool) preg_match("/@virtual/i", $docComment),
+                    'type' => $type,
+                );
+            }
+        }
+    }
+
+    /**
+     * @param string $objectName
+     * @return array
+     */
+    public function getDocumentCache($objectName)
+    {
+        if (is_object($objectName)) {
+            $objectName = get_class($objectName);
+        }
+        return isset(self::$_attributeNames[$objectName]) ? self::$_attributeNames[$objectName] : array();
+    }
+
+    /**
+     * Get the names of the attributes of the class kept in cache
+     *
+     * @param string|object $objectName
+     * @param bool $withVirtual
+     * @return array
+     */
+    public function getDocumentFields($objectName, $withVirtual = false)
+    {
+        $result = array();
+        $cache = $this->getDocumentCache($objectName);
+
+        if (!empty($cache)) {
+            foreach ($cache as $item) {
+                if (!$withVirtual && $item['virtual']) {
+                    continue;
+                }
+                $result[] = $item['name'];
+            }
+        }
+
+        return $result;
     }
 }
