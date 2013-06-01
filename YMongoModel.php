@@ -15,6 +15,15 @@ class YMongoModel extends CModel
     const SUB_DOCUMENT_SINGLE = 'single';
     const SUB_DOCUMENT_MULTI = 'multi';
 
+    // Relation types
+    const RELATION_ONE = 'one';
+    const RELATION_MANY = 'many';
+
+    // In what format give the result
+    const RELATION_RETURN_ARRAY = 'array';
+    const RELATION_RETURN_MODEL = 'model';
+    const RELATION_RETURN_CURSOR = 'cursor';
+
     /**
      * By default, this is the 'mongoDb' application component.
      *
@@ -35,11 +44,11 @@ class YMongoModel extends CModel
     private $_subDocuments = array();
 
     /**
-     * Errors moved here because of private
+     * Related documents
      *
      * @var array
      */
-    private $_errors = array();
+    private $_related = array();
 
     /**
      * The base model creation
@@ -69,13 +78,25 @@ class YMongoModel extends CModel
      */
     public function __get($name)
     {
+        // Some variables
         if (isset($this->_attributes[$name])) {
             return $this->_attributes[$name];
-        } elseif(isset($this->_subDocuments[$name])) {
+        }
+        // Sub documents
+        elseif(isset($this->_subDocuments[$name])) {
             return $this->_subDocuments[$name];
         } elseif(array_key_exists($name, $this->subDocuments())) {
             return $this->_subDocuments[$name] = $this->getSubDocumentModel($name);
-        } else {
+        }
+        // Related documents
+        elseif(isset($this->_related[$name])) {
+            return $this->_related[$name];
+        }
+        elseif(array_key_exists($name, $this->relations())) {
+            return $this->_related[$name] = $this->getRelated($name);
+        }
+        // Basic variables access
+        else {
             try {
                 return parent::__get($name);
             } catch (CException $e) {
@@ -91,11 +112,15 @@ class YMongoModel extends CModel
      */
     public function __set($name, $value)
     {
+        // Related documents
+        if(isset($this->_related[$name]) || array_key_exists($name, $this->relations())) {
+            $this->_related[$name] = $value;
+        }
         // Sub documents
         if (isset($this->_subDocuments[$name]) || array_key_exists($name, $this->subDocuments())) {
             return $this->setSubDocument($name, $value);
         }
-        // Default set
+        // Basic set
         else {
             try {
                 return parent::__set($name,$value);
@@ -113,9 +138,22 @@ class YMongoModel extends CModel
     {
         if (isset($this->_attributes[$name])) {
             return true;
-        } elseif(array_key_exists($name, $this->subDocuments())) {
+        }
+        // Sub documents
+        elseif (isset($this->_subDocuments[$name])) {
             return true;
         }
+        elseif(array_key_exists($name, $this->subDocuments())) {
+            return true;
+        }
+        // Related documents
+        elseif(isset($this->_related[$name])) {
+            return true;
+        }
+        elseif (array_key_exists($name, $this->relations())) {
+            return null !== $this->getRelated($name);
+        }
+        // Basic isset
         else {
             return parent::__isset($name);
         }
@@ -129,11 +167,36 @@ class YMongoModel extends CModel
     {
         if (isset($this->_attributes[$name])) {
             unset($this->_attributes[$name]);
-        } elseif (isset($this->_subDocuments[$name])) {
+        }
+        // Sub documents
+        elseif (isset($this->_subDocuments[$name])) {
             unset($this->_subDocuments[$name]);
-        } else {
+        }
+        // Related documents
+        elseif (isset($this->_related[$name])) {
+            unset($this->_related[$name]);
+        }
+        // Basic unset
+        else {
             parent::__unset($name);
         }
+    }
+
+    /**
+     * @param string $name
+     * @param array $parameters
+     * @return mixed
+     */
+    public function __call($name, $parameters)
+    {
+        if(array_key_exists($name, $this->relations())) {
+            if (empty($parameters)) {
+                return $this->getRelated($name, false);
+            } else {
+                return $this->getRelated($name, false, $parameters[0]);
+            }
+        }
+        return parent::__call($name, $parameters);
     }
 
     /**
@@ -267,10 +330,146 @@ class YMongoModel extends CModel
     }
 
     /**
+     * Holds all our relations
+     *
+     * @return array
+     */
+    public function relations()
+    {
+        return array();
+    }
+
+    /**
+     * Returns the related records
+     *
+     * @param string $name
+     * @param bool $refresh
+     * @param array $where
+     * @return YMongoModel|YMongoArrayModel|array|null
+     * @throws YMongoException
+     */
+    public function getRelated($name, $refresh = false, array $where = array())
+    {
+        if (!$refresh && empty($where) && (isset($this->_related[$name]) || array_key_exists($name, $this->_related))) {
+            return $this->_related[$name];
+        }
+
+        $relations = $this->relations();
+
+        if (!isset($relations[$name]) || !is_array($relations[$name]) || sizeof($relations[$name]) < 2) {
+            throw new YMongoException(Yii::t('yii','{class} does not have relation "{name}".',
+                array('{class}' => get_class($this), '{name}' => $name)));
+        }
+
+        Yii::trace('Lazy loading ' . get_class($this) . '.' . $name, 'ext.mongoDb.YMongoModel');
+
+        // Shortcuts to relation properties
+        $relation = $relations[$name];
+
+        $type = $relation[0];
+        /** @var YMongoDocument|string $className */
+        $className = $relation[1];
+        $foreignKey = isset($relation[2]) ? $relation[2] : $this->primaryKey();
+        $primaryKey = isset($relation['on']) ? $this->{$relation['on']} : $this->{$this->primaryKey()};
+
+        // In what format give the result
+        $returnAs = self::RELATION_RETURN_MODEL;
+        if (isset($relation['returnAs'])) {
+            if (in_array($relation['returnAs'], array(self::RELATION_RETURN_CURSOR, self::RELATION_RETURN_ARRAY, self::RELATION_RETURN_MODEL))) {
+                $returnAs = $relation['returnAs'];
+            }
+        }
+
+        // Merge where clause
+        if (isset($relation['where']) && is_array($relation['where'])) {
+            $where = CMap::mergeArray($where, $relation['where']);
+        }
+
+        // Final prepare
+        if (is_array($primaryKey)) {
+            $clause = CMap::mergeArray($where, array($foreignKey => array('$in' => $primaryKey)));
+        } else {
+            $clause = CMap::mergeArray($where, array($foreignKey => $primaryKey));
+        }
+
+
+        // Default empty result
+        $cursor = array();
+
+        /** @var YMongoDocument $model */
+        $model = $className::model();
+
+        if (self::RELATION_ONE === $type) {
+            /** @var YMongoDocument $cursor */
+            $cursor = $model->findOne($clause);
+
+            if ($cursor && self::RELATION_RETURN_ARRAY === $returnAs) {
+                $cursor = $cursor->getDocument();
+            }
+        }
+        elseif (self::RELATION_MANY === $type) {
+            $cursor = $model->find($clause);
+
+            // As array of array
+            if (self::RELATION_RETURN_ARRAY === $returnAs) {
+                $cursor = iterator_to_array($cursor);
+            }
+            // As models
+            elseif (self::RELATION_RETURN_MODEL === $returnAs) {
+                $result = array();
+                foreach($cursor as $item) {
+                    $result[] = $model->populateRecord($item);
+                }
+                $cursor = $result;
+                unset($result);
+            }
+        }
+
+        return $cursor;
+    }
+
+    /**
+     * @param array $reference
+     * @param YMongoDocument $className
+     * @return YMongoDocument
+     */
+    public function populateReference(array $reference, $className = null)
+    {
+        $record = MongoDBRef::get($this->getConnection()->getDatabase(), $reference);
+        if (null === $className) {
+            $className = get_class($this);
+        }
+        return $className::model()->populateRecord($record);
+    }
+
+    /**
+     * eturns a value indicating whether the named related object(s) has been loaded.
+     *
+     * @param $name
+     * @return bool
+     */
+    public function hasRelated($name)
+    {
+        return isset($this->_related[$name]) || array_key_exists($name, $this->_related);
+    }
+
+    /**
+     * You can change the primary key but due to how MongoDB actually works this IS NOT RECOMMENDED
+     *
+     * @return string
+     */
+    public function primaryKey()
+    {
+        return '_id';
+    }
+
+    /**
      * Cleans or rather resets the document
      */
     public function clean()
     {
+        $this->_related = array();
+
         $attributes = $this->attributeNames();
         foreach ($attributes as $name) {
             $this->{$name} = null;

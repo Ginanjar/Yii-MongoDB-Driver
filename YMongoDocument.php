@@ -668,6 +668,15 @@ abstract class YMongoDocument extends YMongoModel
      */
     public function __call($name, $parameters)
     {
+        // Related documents
+        if (array_key_exists($name, $this->relations())) {
+            if(empty($parameters)) {
+                return $this->getRelated($name, false);
+            } else {
+                return $this->getRelated($name, false, $parameters[0]);
+            }
+        }
+
         $scopes = $this->scopes();
         if (isset($scopes[$name])) {
             $this->setDbCriteria($this->mergeCriteria($this->_criteria, $scopes[$name]));
@@ -813,16 +822,6 @@ abstract class YMongoDocument extends YMongoModel
     public function collectionName()
     {
         return get_class($this);
-    }
-
-    /**
-     * You can change the primary key but due to how MongoDB actually works this IS NOT RECOMMENDED
-     *
-     * @return string
-     */
-    public function primaryKey()
-    {
-        return '_id';
     }
 
     /**
