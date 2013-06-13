@@ -6,7 +6,7 @@ if (!extension_loaded('mongo')) {
 }
 // Check the version of MongoDB, this class is designed to work with the version >= 1.3.0
 if (version_compare(phpversion('mongo'), '1.3.0', '<')) {
-    throw new CException('Please update MongoDB driver to version 1.3.0 or earlier.');
+    throw new CException('Please update MongoDB driver to version 1.3.0 or later.');
 }
 
 // Set MongoDb settings

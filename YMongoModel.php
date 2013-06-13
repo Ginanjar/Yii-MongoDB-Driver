@@ -572,4 +572,205 @@ class YMongoModel extends CModel
             throw new YMongoException(Yii::t('yii','YMongoDocument a "mongoDb" YMongoClient application component.'));
         }
     }
+
+    /**
+     * This event is raised before the record is saved.
+     *
+     * @param CEvent $event
+     */
+    public function onBeforeSave($event)
+    {
+        $this->raiseEvent('onBeforeSave', $event);
+    }
+
+    /**
+     * This event is raised after the record is saved.
+     *
+     * @param CEvent $event
+     */
+    public function onAfterSave($event)
+    {
+        $this->raiseEvent('onAfterSave', $event);
+    }
+
+    /**
+     * This event is raised before the record is deleted.
+     *
+     * @param CEvent $event
+     */
+    public function onBeforeDelete($event)
+    {
+        $this->raiseEvent('onBeforeDelete', $event);
+    }
+
+    /**
+     * This event is raised after the record is deleted.
+     *
+     * @param CEvent $event
+     */
+    public function onAfterDelete($event)
+    {
+        $this->raiseEvent('onAfterDelete', $event);
+    }
+
+    /**
+     * This event is raised before an AR finder performs a find call.
+     *
+     * @param CEvent $event
+     */
+    public function onBeforeFind($event)
+    {
+        $this->raiseEvent('onBeforeFind', $event);
+    }
+
+    /**
+     * This event is raised after the record is instantiated by a find method.
+     *
+     * @param CEvent $event
+     */
+    public function onAfterFind($event)
+    {
+        $this->raiseEvent('onAfterFind', $event);
+    }
+
+    /**
+     * @param string $eventHandlerName
+     * @return bool
+     */
+    protected function runEventOnSubDocuments($eventHandlerName)
+    {
+        $result = true;
+        $documents = $this->subDocuments();
+        if (!empty($documents)) {
+            foreach (array_keys($documents) as $itemName) {
+                $document = $this->{$itemName};
+                if ($document instanceof YMongoModel) {
+                    if (!$this->runEventOnDocumentsItem($document, $eventHandlerName)) {
+                        $result = false;
+                    }
+                }
+                elseif ($document instanceof YMongoArrayModel) {
+                    foreach($document as $singleDocument) {
+                        if (!$this->runEventOnDocumentsItem($singleDocument, $eventHandlerName)) {
+                            $result = false;
+                        }
+                    }
+                }
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * @param YMongoModel $document
+     * @param string $eventHandlerName
+     * @return bool
+     */
+    protected function runEventOnDocumentsItem($document, $eventHandlerName)
+    {
+        if ($document->hasEventHandler($eventHandlerName)) {
+            switch ($eventHandlerName) {
+                case 'onBeforeSave':
+                    $event = new CModelEvent($document);
+                    $document->onBeforeSave($event);
+                    return $event->isValid;
+
+                case 'onAfterSave':
+                    $document->onAfterSave(new CEvent($document));
+                    break;
+
+                case 'onBeforeDelete':
+                    $event = new CModelEvent($document);
+                    $document->onBeforeDelete($event);
+                    return $event->isValid;
+
+                case 'onAfterDelete':
+                    $document->onAfterDelete(new CEvent($document));
+                    break;
+
+                case 'onBeforeFind':
+                    $document->onBeforeFind(new CModelEvent($document));
+                    break;
+
+                case 'onAfterFind':
+                    $document->onAfterFind(new CEvent($document));
+                    break;
+            }
+        }
+        return true;
+    }
+
+    /**
+     *  This method is invoked before saving a record (after validation, if any).
+     *
+     * @return bool
+     */
+    protected function beforeSave()
+    {
+        if ($this->hasEventHandler('onBeforeSave')) {
+            $resDoc = $this->runEventOnDocumentsItem($this, 'onBeforeSave');
+            $resSubDoc = $this->runEventOnSubDocuments('onBeforeSave');
+            return $resDoc & $resSubDoc;
+        }
+        return true;
+    }
+
+    /**
+     * This method is invoked after saving a record successfully.
+     */
+    protected function afterSave()
+    {
+        if ($this->hasEventHandler('onAfterSave')) {
+            $this->runEventOnDocumentsItem($this, 'onAfterSave');
+            $this->runEventOnSubDocuments('onAfterSave');
+        }
+    }
+
+    /**
+     * This method is invoked before deleting a record.
+     *
+     * @return bool
+     */
+    protected function beforeDelete()
+    {
+        if ($this->hasEventHandler('onBeforeDelete')) {
+            $resDoc = $this->runEventOnDocumentsItem($this, 'onBeforeDelete');
+            $resSubDoc = $this->runEventOnSubDocuments('onBeforeDelete');
+            return $resDoc & $resSubDoc;
+        }
+        return true;
+    }
+
+    /**
+     * This method is invoked after deleting a record.
+     */
+    protected function afterDelete()
+    {
+        if ($this->hasEventHandler('onAfterDelete')) {
+            $this->runEventOnDocumentsItem($this, 'onAfterDelete');
+            $this->runEventOnSubDocuments('onAfterDelete');
+        }
+    }
+
+    /**
+     * This method is invoked before an AR finder executes a find call.
+     */
+    protected function beforeFind()
+    {
+        if ($this->hasEventHandler('onBeforeFind')) {
+            $this->runEventOnDocumentsItem($this, 'onBeforeFind');
+            $this->runEventOnSubDocuments('onBeforeFind');
+        }
+    }
+
+    /**
+     * This method is invoked after each record is instantiated by a find method.
+     */
+    protected function afterFind()
+    {
+        if ($this->hasEventHandler('onAfterFind')) {
+            $this->runEventOnDocumentsItem($this, 'onAfterFind');
+            $this->runEventOnSubDocuments('onAfterFind');
+        }
+    }
 }

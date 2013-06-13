@@ -391,6 +391,20 @@ class YMongoCommand extends CComponent
     }
 
     /**
+     * Upsert a document
+     *
+     * @param array $options
+     * @param string $collectionName
+     * @return bool
+     * @throws YMongoException
+     */
+    public function upsert($options = array(), $collectionName = null)
+    {
+        $options = CMap::mergeArray(array('upsert'=>true, 'multiple' => false), $options);
+        return $this->runUpdate('update', $options, $collectionName);
+    }
+
+    /**
      * Update a document
      *
      * @param array $options
@@ -870,7 +884,7 @@ class YMongoCommand extends CComponent
      * @param int $value
      * @return YMongoCommand
      */
-    public function inc($fields = array(), $value = 0)
+    public function inc($fields = array(), $value = 1)
     {
         $this->updateInit('$inc');
 
@@ -892,7 +906,7 @@ class YMongoCommand extends CComponent
      * @param int $value
      * @return YMongoCommand
      */
-    public function dec($fields = array(), $value = 0)
+    public function dec($fields = array(), $value = 1)
     {
         $this->updateInit('$inc');
 
@@ -1161,12 +1175,12 @@ class YMongoCommand extends CComponent
                     $profile .= ', sort: ' . $this->makeMeShorterProfile($this->_sorts);
                 }
             }
-            // Non-scalar print_r
+            // Non-scalar
             elseif (!is_scalar($profile)) {
                 if (is_array($profile)) {
                     $profile = $this->makeMeShorterProfile($profile);
                 } else {
-                    $profile = print_r($profile, true);
+                    $profile = print_r($profile, true); // production-ok
                 }
             }
             Yii::beginProfile($profile, 'YMongoCommand');
@@ -1182,9 +1196,9 @@ class YMongoCommand extends CComponent
     private function makeMeShorterProfile(array $array)
     {
         if (($size = sizeof($array)) > 2) {
-            return print_r(array_slice($array, 0 , 2), true) . ' AND ' . ($size - 2) . ' ELEMENTS';
+            return print_r(array_slice($array, 0 , 2), true) . ' AND ' . ($size - 2) . ' ELEMENTS'; // production-ok
         } else {
-            return print_r($array, true);
+            return print_r($array, true); // production-ok
         }
     }
 
