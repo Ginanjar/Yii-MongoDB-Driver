@@ -488,9 +488,13 @@ abstract class YMongoDocument extends YMongoModel
         } catch (Exception $e) {
             $record = null;
         }
+        
+        // Reset scope
+        if (array() !== $dbCriteria) {
+            $this->resetScope();
+        }
 
         if (null !== $record) {
-            $this->resetScope();
             return $this->populateRecord($record);
         }
         return null;
