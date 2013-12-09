@@ -656,13 +656,22 @@ class YMongoCommand extends CComponent
     public function orWhere(array $wheres = array())
     {
         if (!empty($wheres)) {
-            // Prepare $or wheres statement
-            if (!isset($this->_wheres['$or']) || !is_array($this->_wheres['$or'])) {
-                $this->_wheres['$or'] = array();
+            $ready = array();
+
+            foreach ($wheres as $value) {
+                if (is_array($value)) {
+                    $ready[] = $value;
+                }
+
             }
 
-            foreach ($wheres as $where => $value) {
-                $this->_wheres['$or'][] = array($where => $value);
+            if (!empty($ready)) {
+                // Prepare $or wheres statement
+                if (!isset($this->_wheres['$or']) || !is_array($this->_wheres['$or'])) {
+                    $this->_wheres['$or'] = array();
+                }
+                // Set statement
+                $this->_wheres['$or'] = $ready;
             }
         }
 
@@ -1183,7 +1192,7 @@ class YMongoCommand extends CComponent
                     $profile = print_r($profile, true); // production-ok
                 }
             }
-            Yii::beginProfile($profile, 'YMongoCommand');
+            Yii::beginProfile($profile, 'system.mongoDb.YMongoCommand');
             return $profile;
         }
         return false;
@@ -1207,7 +1216,7 @@ class YMongoCommand extends CComponent
      */
     private function endProfile($profile)
     {
-        Yii::endProfile($profile, 'YMongoCommand');
+        Yii::endProfile($profile, 'system.mongoDb.YMongoCommand');
     }
 
     /**

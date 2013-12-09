@@ -87,6 +87,19 @@ class YMongoCriteria extends CComponent
     }
 
     /**
+     * @param $column
+     * @param $valueStart
+     * @param $valueEnd
+     */
+    public function addBetweenCondition($column, $valueStart, $valueEnd)
+    {
+        $this->condition[$column] = array(
+            '$gte' => $valueStart,
+            '$lte' => $valueEnd,
+        );
+    }
+
+    /**
      * Get the selection conditions
      *
      * @return array
@@ -172,7 +185,8 @@ class YMongoCriteria extends CComponent
      */
     public function compare($column, $value = null, $strong = true)
     {
-        if (!$value) {
+        // Not empty
+        if (null === $value || '' === $value) {
             return $this;
         }
 

@@ -13,6 +13,7 @@
 class YMongoDateBehaviour extends CActiveRecordBehavior
 {
     public $dateAttributes = array();
+    public $skipNull = true;
 
     /**
      * @param CModelEvent $event
@@ -28,6 +29,9 @@ class YMongoDateBehaviour extends CActiveRecordBehavior
 
         foreach ($this->dateAttributes as $attribute) {
             if (!$owner->hasAttribute($attribute)) {
+                continue;
+            }
+            if ($this->skipNull && null === $owner->{$attribute}) {
                 continue;
             }
             $owner->{$attribute} = YMongoCommand::mDate($owner->{$attribute});

@@ -199,10 +199,18 @@ abstract class YMongoDocument extends YMongoModel
 
             // Insert new record
             try {
+                if ($this->getConnection()->enableProfiling) {
+                    Yii::beginProfile('MongoDocument insert into "'.$this->getCollection()->getName().'"', 'system.mongoDb.YMongoDocument');
+                }
+
                 $res = $this->getCollection()->insert(
                     $this->getDocument(),
                     $this->getConnection()->getDefaultWriteConcern()
                 );
+
+                if ($this->getConnection()->enableProfiling) {
+                    Yii::endProfile('MongoDocument insert into "'.$this->getCollection()->getName().'"', 'system.mongoDb.YMongoDocument');
+                }
 
                 /**
                  * Returns an array containing the status of the insertion if the "w" option is set.
@@ -214,7 +222,11 @@ abstract class YMongoDocument extends YMongoModel
                     $this->setScenario(self::SCENARIO_UPDATE);
                     return true;
                 }
-            } catch (Exception $e) { }
+            } catch (Exception $e) {
+                if ($this->getConnection()->enableProfiling) {
+                    Yii::endProfile('MongoDocument insert into "'.$this->getCollection()->getName().'"', 'system.mongoDb.YMongoDocument');
+                }
+            }
         }
         return false;
     }
@@ -246,10 +258,18 @@ abstract class YMongoDocument extends YMongoModel
             // Save whole document
             if (null === $attributes) {
                 try {
+                    if ($this->getConnection()->enableProfiling) {
+                        Yii::beginProfile('MongoDocument update into "'.$this->getCollection()->getName().'"', 'system.mongoDb.YMongoDocument');
+                    }
+
                     $res = $this->getCollection()->save(
                         $this->getDocument(),
                         $this->getConnection()->getDefaultWriteConcern()
                     );
+
+                    if ($this->getConnection()->enableProfiling) {
+                        Yii::endProfile('MongoDocument update into "'.$this->getCollection()->getName().'"', 'system.mongoDb.YMongoDocument');
+                    }
 
                     /**
                      * If w was set, returns an array containing the status of the save.
@@ -258,7 +278,11 @@ abstract class YMongoDocument extends YMongoModel
                     if (true === $res || (is_array($res) && !empty($res['ok']))) {
                         $result = true;
                     }
-                } catch (Exception $e) { }
+                } catch (Exception $e) {
+                    if ($this->getConnection()->enableProfiling) {
+                        Yii::endProfile('MongoDocument update into "'.$this->getCollection()->getName().'"', 'system.mongoDb.YMongoDocument');
+                    }
+                }
             }
             // Save only specify attributes
             else {
@@ -270,11 +294,19 @@ abstract class YMongoDocument extends YMongoModel
                 }
 
                 try {
+                    if ($this->getConnection()->enableProfiling) {
+                        Yii::beginProfile('MongoDocument update into "'.$this->getCollection()->getName().'"', 'system.mongoDb.YMongoDocument');
+                    }
+
                     $res = $this->getCollection()->update(
                         array($pk => $this->{$pk}), // criteria
                         array('$set' => $document), // new object
                         $this->getConnection()->getDefaultWriteConcern()
                     );
+
+                    if ($this->getConnection()->enableProfiling) {
+                        Yii::endProfile('MongoDocument update into "'.$this->getCollection()->getName().'"', 'system.mongoDb.YMongoDocument');
+                    }
 
                     /**
                      * Returns an array containing the status of the update if the "w" option is set.
@@ -283,7 +315,11 @@ abstract class YMongoDocument extends YMongoModel
                     if (true === $res || (is_array($res) && !empty($res['ok']))) {
                         $result = true;
                     }
-                } catch (Exception $e) { }
+                } catch (Exception $e) {
+                    if ($this->getConnection()->enableProfiling) {
+                        Yii::endProfile('MongoDocument update into "'.$this->getCollection()->getName().'"', 'system.mongoDb.YMongoDocument');
+                    }
+                }
             }
 
             // Everything alright
@@ -313,6 +349,10 @@ abstract class YMongoDocument extends YMongoModel
         }
 
         try {
+            if ($this->getConnection()->enableProfiling) {
+                Yii::beginProfile('MongoDocument update by primary key into "'.$this->getCollection()->getName().'"', 'system.mongoDb.YMongoDocument');
+            }
+
             $res = $this->getCollection()->update(
                 $this->mergeCriteria(
                     $criteria,
@@ -325,6 +365,10 @@ abstract class YMongoDocument extends YMongoModel
                 )
             );
 
+            if ($this->getConnection()->enableProfiling) {
+                Yii::endProfile('MongoDocument update by primary key into "'.$this->getCollection()->getName().'"', 'system.mongoDb.YMongoDocument');
+            }
+
             /**
              * Returns an array containing the status of the update if the "w" option is set.
              * Otherwise, returns TRUE.
@@ -332,7 +376,11 @@ abstract class YMongoDocument extends YMongoModel
             if (true === $res || (is_array($res) && !empty($res['ok']))) {
                 return true;
             }
-        } catch (Exception $e) { }
+        } catch (Exception $e) {
+            if ($this->getConnection()->enableProfiling) {
+                Yii::endProfile('MongoDocument update by primary key into "'.$this->getCollection()->getName().'"', 'system.mongoDb.YMongoDocument');
+            }
+        }
 
         return false;
     }
@@ -369,6 +417,10 @@ abstract class YMongoDocument extends YMongoModel
         }
 
         try {
+            if ($this->getConnection()->enableProfiling) {
+                Yii::beginProfile('MongoDocument update all into "'.$this->getCollection()->getName().'"', 'system.mongoDb.YMongoDocument');
+            }
+
             $res = $this->getCollection()->update(
                 $criteria,
                 $updateDoc,
@@ -385,7 +437,11 @@ abstract class YMongoDocument extends YMongoModel
             if (true === $res || (is_array($res) && !empty($res['ok']))) {
                 return true;
             }
-        } catch (Exception $e) { }
+        } catch (Exception $e) {
+            if ($this->getConnection()->enableProfiling) {
+                Yii::endProfile('MongoDocument update all into "'.$this->getCollection()->getName().'"', 'system.mongoDb.YMongoDocument');
+            }
+        }
 
         return false;
     }
@@ -434,8 +490,21 @@ abstract class YMongoDocument extends YMongoModel
         }
 
         try {
-            return $this->getCollection()->find(!empty($criteria) ? $criteria : array())->count();
-        } catch (Exception $e) { }
+            if ($this->getConnection()->enableProfiling) {
+                Yii::beginProfile('MongoDocument count "'.$this->getCollection()->getName().'"', 'system.mongoDb.YMongoDocument');
+            }
+
+            $result = $this->getCollection()->find(!empty($criteria) ? $criteria : array())->count();
+
+            if ($this->getConnection()->enableProfiling) {
+                Yii::endProfile('MongoDocument count "'.$this->getCollection()->getName().'"', 'system.mongoDb.YMongoDocument');
+            }
+            return $result;
+        } catch (Exception $e) {
+            if ($this->getConnection()->enableProfiling) {
+                Yii::endProfile('MongoDocument count "'.$this->getCollection()->getName().'"', 'system.mongoDb.YMongoDocument');
+            }
+        }
 
         return 0;
     }
@@ -455,8 +524,21 @@ abstract class YMongoDocument extends YMongoModel
         }
 
         try {
-            return null !== $this->getCollection()->findOne($criteria);
-        } catch (Exception $e) { }
+            if ($this->getConnection()->enableProfiling) {
+                Yii::beginProfile('MongoDocument exists "'.$this->getCollection()->getName().'"', 'system.mongoDb.YMongoDocument');
+            }
+
+            $result = null !== $this->getCollection()->findOne($criteria);
+
+            if ($this->getConnection()->enableProfiling) {
+                Yii::endProfile('MongoDocument exists "'.$this->getCollection()->getName().'"', 'system.mongoDb.YMongoDocument');
+            }
+            return $result;
+        } catch (Exception $e) {
+            if ($this->getConnection()->enableProfiling) {
+                Yii::endProfile('MongoDocument exists "'.$this->getCollection()->getName().'"', 'system.mongoDb.YMongoDocument');
+            }
+        }
 
         return false;
     }
@@ -479,16 +561,28 @@ abstract class YMongoDocument extends YMongoModel
 
         $this->beforeFind();
         try {
+            if ($this->getConnection()->enableProfiling) {
+                Yii::beginProfile('MongoDocument find one "'.$this->getCollection()->getName().'"', 'system.mongoDb.YMongoDocument');
+            }
+
             $record = $this->getCollection()->findOne(
                 $this->mergeCriteria(
                     isset($dbCriteria['condition']) ? $dbCriteria['condition'] : array(),
                     $criteria
                 )
             );
+
+            if ($this->getConnection()->enableProfiling) {
+                Yii::endProfile('MongoDocument find one "'.$this->getCollection()->getName().'"', 'system.mongoDb.YMongoDocument');
+            }
         } catch (Exception $e) {
             $record = null;
+
+            if ($this->getConnection()->enableProfiling) {
+                Yii::endProfile('MongoDocument find one "'.$this->getCollection()->getName().'"', 'system.mongoDb.YMongoDocument');
+            }
         }
-        
+
         // Reset scope
         if (array() !== $dbCriteria) {
             $this->resetScope();
@@ -592,6 +686,10 @@ abstract class YMongoDocument extends YMongoModel
         }
 
         try {
+            if ($this->getConnection()->enableProfiling) {
+                Yii::beginProfile('MongoDocument delete by primary key "'.$this->getCollection()->getName().'"', 'system.mongoDb.YMongoDocument');
+            }
+
             $res = $this->getCollection()->remove(
                 CMap::mergeArray(
                     array($this->primaryKey() => $this->getPrimaryKey($pk)),
@@ -604,6 +702,10 @@ abstract class YMongoDocument extends YMongoModel
                 )
             );
 
+            if ($this->getConnection()->enableProfiling) {
+                Yii::endProfile('MongoDocument delete by primary key "'.$this->getCollection()->getName().'"', 'system.mongoDb.YMongoDocument');
+            }
+
             /**
              * Returns an array containing the status of the update if the "w" option is set.
              * Otherwise, returns TRUE.
@@ -611,7 +713,11 @@ abstract class YMongoDocument extends YMongoModel
             if (true === $res || (is_array($res) && !empty($res['ok']))) {
                 return true;
             }
-        } catch (Exception $e) { }
+        } catch (Exception $e) {
+            if ($this->getConnection()->enableProfiling) {
+                Yii::endProfile('MongoDocument delete by primary key "'.$this->getCollection()->getName().'"', 'system.mongoDb.YMongoDocument');
+            }
+        }
         return false;
     }
 
@@ -631,6 +737,10 @@ abstract class YMongoDocument extends YMongoModel
         }
 
         try {
+            if ($this->getConnection()->enableProfiling) {
+                Yii::beginProfile('MongoDocument delete all "'.$this->getCollection()->getName().'"', 'system.mongoDb.YMongoDocument');
+            }
+
             $res = $this->getCollection()->remove(
                 $criteria,
                 CMap::mergeArray(
@@ -639,6 +749,10 @@ abstract class YMongoDocument extends YMongoModel
                 )
             );
 
+            if ($this->getConnection()->enableProfiling) {
+                Yii::endProfile('MongoDocument delete all "'.$this->getCollection()->getName().'"', 'system.mongoDb.YMongoDocument');
+            }
+
             /**
              * Returns an array containing the status of the update if the "w" option is set.
              * Otherwise, returns TRUE.
@@ -646,7 +760,11 @@ abstract class YMongoDocument extends YMongoModel
             if (true === $res || (is_array($res) && !empty($res['ok']))) {
                 return true;
             }
-        } catch (Exception $e) { }
+        } catch (Exception $e) {
+            if ($this->getConnection()->enableProfiling) {
+                Yii::endProfile('MongoDocument delete all "'.$this->getCollection()->getName().'"', 'system.mongoDb.YMongoDocument');
+            }
+        }
         return false;
     }
 

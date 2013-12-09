@@ -122,6 +122,7 @@ class YMongoClient extends CApplicationComponent
         // Load classes
         Yii::setPathOfAlias('mongoDb', dirname(__FILE__));
         Yii::import('mongoDb.*');
+        Yii::import('mongoDb.cache.*');
         Yii::import('mongoDb.behaviors.*');
         Yii::import('mongoDb.validators.*');
 
@@ -267,7 +268,16 @@ class YMongoClient extends CApplicationComponent
      */
     public function execute($code, array $args = array())
     {
+        if ($this->enableProfiling) {
+            Yii::beginProfile('MongoClient execute "'.$this->getCollection()->getName().'"', 'system.mongoDb.YMongoClient');
+        }
+
         $response = $this->getDatabase()->execute($code, $args);
+
+        if ($this->enableProfiling) {
+            Yii::endProfile('MongoClient execute "'.$this->getCollection()->getName().'"', 'system.mongoDb.YMongoClient');
+        }
+
         return empty($response['ok']) ? false : $response['retval'];
     }
 
@@ -278,7 +288,17 @@ class YMongoClient extends CApplicationComponent
      */
     public function command(array $command, array $options = array())
     {
-        return $this->getDatabase()->command($command, $options);
+        if ($this->enableProfiling) {
+            Yii::beginProfile('MongoClient command "'.$this->getCollection()->getName().'"', 'system.mongoDb.YMongoClient');
+        }
+
+        $result = $this->getDatabase()->command($command, $options);
+
+        if ($this->enableProfiling) {
+            Yii::endProfile('MongoClient command "'.$this->getCollection()->getName().'"', 'system.mongoDb.YMongoClient');
+        }
+
+        return $result;
     }
 
     public function setDocumentCache($object)
@@ -323,7 +343,7 @@ class YMongoClient extends CApplicationComponent
     }
 
     /**
-     * @param string $objectName
+     * @param string|object $objectName
      * @return array
      */
     public function getDocumentCache($objectName)
