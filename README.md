@@ -3,6 +3,9 @@ Yii MongoDB Driver
 
 This is an extension is driver for MongoDB for Yii Framework 1.x. This extension was forked from somewhere long time ago and now actively developed and supported by me.
 
+## Versions
+Current stable release version is 1.0.0. You can download it from [here](https://github.com/fromYukki/Yii-MongoDB-Driver/archive/v1.0.0.zip).
+
 ## Installation
 You need to clone or [download](https://github.com/fromYukki/Yii-MongoDB-Driver/archive/master.zip) this repo, then unpack it into your **extensions** folder (`protected/extensions/mongoDb`) and add some lines in your `protected/config/main.php` config file:
 ```php
