@@ -43,7 +43,7 @@ Here is some variables that you can pass to the component:
 * **Soft delete behaviour** support and 5+ other useful behaviours support.
 
 ## Documentation
-Full documentation and a lot of examples you can find at the [Wiki pages](https://github.com/fromYukki/Yii-MongoDB-Driver/wiki/Yii-MongoDB-Driver-Documentation).
+Full documentation and a lot of examples you can find at the [Wiki pages](https://github.com/fromYukki/Yii-MongoDB-Driver/wiki).
 
 ## Bug tracker
 If you find any bugs, please create an issue at [Issue tracker for project](https://github.com/fromYukki/Yii-MongoDB-Driver/issues) GitHub repository.
