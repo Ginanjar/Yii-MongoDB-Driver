@@ -327,13 +327,13 @@ class YMongoModel extends CModel
         switch ($type) {
             // Array of documents
             case self::SUB_DOCUMENT_MULTI:
-                $model = new YMongoArrayModel($className, $value);
+                $model = new YMongoArrayModel($className, $value, $this->scenario);
                 break;
 
             // Single document
             default:
                 /** @var YMongoModel $model */
-                $model = new $className(null);
+                $model = new $className($this->scenario);
                 $model->setAttributes($value, false);
                 break;
         }

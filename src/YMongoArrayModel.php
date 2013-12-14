@@ -18,13 +18,19 @@ class YMongoArrayModel extends CList
      */
     public $modelClass;
 
+    /** @var string */
+    public $scenario;
+
     /**
      * @param string|object $modelClass
      * @param array $values
+     * @param $scenario
      */
-    public function __construct($modelClass, array $values = array())
+    public function __construct($modelClass, array $values = array(), $scenario = null)
     {
         $this->modelClass = !is_object($modelClass) ? $modelClass : get_class($modelClass);
+
+        $this->scenario = $scenario;
         $this->copyFrom($values);
     }
 
@@ -67,7 +73,7 @@ class YMongoArrayModel extends CList
         }
 
         /** @var YMongoModel $model */
-        $model = new $this->modelClass(!empty($data) ? YMongoModel::SCENARIO_UPDATE : YMongoModel::SCENARIO_INSERT);
+        $model = new $this->modelClass(($this->scenario ? $this->scenario : (!empty($data) ? YMongoModel::SCENARIO_UPDATE : YMongoModel::SCENARIO_INSERT)));
         $model->setAttributes($data, false);
         return $model;
     }
