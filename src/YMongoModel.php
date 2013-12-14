@@ -240,6 +240,75 @@ class YMongoModel extends CModel
     }
 
     /**
+     * Returns a value indicating whether the attribute is required.
+     * This is determined by checking if the attribute is associated with a
+     *
+     * {@link CRequiredValidator} validation rule in the current {@link scenario}.
+     * @param string $attribute attribute name
+     * @return boolean whether the attribute is required
+     */
+    public function isAttributeRequired($attribute)
+    {
+        $originalAttributeName = $attribute;
+
+        // Probably this is sub document
+        if (($pos = strpos($attribute, '[')) !== false) {
+            $documents = $this->subDocuments();
+            if (!empty($documents)) {
+                foreach (array_keys($documents) as $itemName) {
+                    if (preg_match("/^" . preg_quote($itemName) . "\[/", $attribute)) {
+                        $attribute = $itemName;
+                    }
+                }
+            }
+        }
+
+        foreach($this->getValidators($attribute) as $validator) {
+            if ($validator instanceof CRequiredValidator) {
+                return true;
+            }
+            if ($validator instanceof YSubDocumentValidator) {
+                if (!empty($documents[$attribute])) {
+                    // Get nested document
+                    $document = $this->{$attribute};
+
+                    if (preg_match_all("/\[(.*?)\]/", $originalAttributeName, $matches)) {
+                        $matches = $matches[1];
+
+                        // nested[0][attribute] - multi
+                        if ('' === preg_replace("/\d+/", '', $matches[0])) {
+                            $attribute = $matches[1];
+                        }
+                        // nested[attribute] - single
+                        else {
+                            $attribute = $matches[0];
+                        }
+
+                    }
+
+                    // Check for required
+                    if ($document instanceof YMongoModel) {
+                        $result = $document->isAttributeRequired($attribute);
+                        if ($result) {
+                            return true;
+                        }
+                    }
+                    elseif ($document instanceof YMongoArrayModel) {
+                        /** @var $item YMongoModel */
+                        foreach ($document as $item) {
+                            $result = $item->isAttributeRequired($attribute);
+                            if ($result) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
      * Holds all subDocuments
      *
      * @return array
