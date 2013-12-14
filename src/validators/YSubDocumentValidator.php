@@ -27,11 +27,8 @@ class YSubDocumentValidator extends CValidator
      */
     public function validateAttribute($object, $attribute)
     {
-        // Object sub documents
-        $subDocuments = $object->subDocuments();
-
-        // Determinate type of sub document
-        $type = isset($subDocuments[$attribute]['type']) ? $subDocuments[$attribute]['type'] : YMongoModel::SUB_DOCUMENT_SINGLE;
+        // Get sub documents & determinate type of sub document
+        list(, $type) = $this->getSubDocumentsAndType($object, $attribute);
 
         // Multi objects
         if (YMongoModel::SUB_DOCUMENT_MULTI === $type) {
@@ -72,6 +69,96 @@ class YSubDocumentValidator extends CValidator
                 }
             }
         }
+    }
+
+    /**
+     * Returns the JavaScript needed for performing client-side validation.
+     *
+     * @param YMongoModel $object the data object being validated
+     * @param string $attribute the name of the attribute to be validated.
+     * @return string the client-side validation script. Null if the validator does not support client-side validation.
+     */
+    public function clientValidateAttribute($object, $attribute)
+    {
+        // Save original
+        $originalAttributeName = $attribute;
+
+        // Find out if it is nested
+        $attribute = $object->parseAttributeName($attribute);
+
+        // Get model
+        $document = $object->{$attribute};
+
+        // Extract nested name
+        if (preg_match_all("/\[(.*?)\]/", $originalAttributeName, $matches)) {
+            $matches = $matches[1];
+
+            // nested[0][attribute] - multi
+            if ('' === preg_replace("/\d+/", '', $matches[0])) {
+                $attribute = $matches[1];
+            }
+            // nested[attribute] - single
+            else {
+                $attribute = $matches[0];
+            }
+
+        }
+
+        $validators = array();
+
+        // Check for required
+        if ($document instanceof YMongoModel) {
+            // Add rules from parent
+            if (!empty($this->rules)) {
+                $this->addRulesToModel($document, true);
+            }
+
+            foreach ($document->getValidators($attribute) as $validator) {
+                /** @var $validator CValidator */
+                if ($validator->enableClientValidation) {
+                    if (($js = $validator->clientValidateAttribute($document, $attribute)) != '') {
+                        $validators[] = $js;
+                    }
+                }
+            }
+        }
+        elseif ($document instanceof YMongoArrayModel) {
+            /** @var $item YMongoModel */
+            foreach ($document as $item) {
+                // Add rules from parent
+                if (!empty($this->rules)) {
+                    $this->addRulesToModel($item, true);
+                }
+
+                foreach ($item->getValidators($attribute) as $validator) {
+                    /** @var $validator CValidator */
+                    if ($validator->enableClientValidation) {
+                        if (($js = $validator->clientValidateAttribute($item, $attribute)) != '') {
+                            $validators[] = $js;
+                        }
+                    }
+                }
+            }
+        }
+
+        return !empty($validators) ? implode(PHP_EOL, $validators) : '';
+    }
+
+    /**
+     * @param YMongoModel $object
+     * @param string $attribute
+     * @return array
+     */
+    private function getSubDocumentsAndType($object, $attribute)
+    {
+        // Object sub documents
+        $subDocuments = $object->subDocuments();
+
+        return array(
+            $subDocuments,
+            // Determinate type of sub document
+            isset($subDocuments[$attribute]['type']) ? $subDocuments[$attribute]['type'] : YMongoModel::SUB_DOCUMENT_SINGLE,
+        );
     }
 
     /**

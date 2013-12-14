@@ -239,6 +239,40 @@ class YMongoModel extends CModel
         return array_merge($this->getConnection()->getDocumentFields(get_class($this)), array_keys($this->_attributes), array_keys($this->subDocuments()));
     }
 
+    public function parseAttributeName($attribute)
+    {
+        if (empty($attribute)) {
+            return $attribute;
+        }
+
+        // Probably this is sub document
+        if (($pos = strpos($attribute, '[')) !== false) {
+            $documents = $this->subDocuments();
+            if (!empty($documents)) {
+                foreach (array_keys($documents) as $itemName) {
+                    if (preg_match("/^" . preg_quote($itemName) . "\[/", $attribute)) {
+                        return $itemName;
+                    }
+                }
+            }
+        }
+
+        return $attribute;
+    }
+
+    /**
+     * Returns the validators applicable to the current {@link scenario}.
+     * @param string $attribute the name of the attribute whose validators should be returned.
+     * If this is null, the validators for ALL attributes in the model will be returned.
+     * @return array the validators applicable to the current {@link scenario}.
+     */
+    public function getValidators($attribute = null)
+    {
+        // Probably this is sub document
+        $attribute = $this->parseAttributeName($attribute);
+        return parent::getValidators($attribute);
+    }
+
     /**
      * Returns a value indicating whether the attribute is required.
      * This is determined by checking if the attribute is associated with a
@@ -252,22 +286,14 @@ class YMongoModel extends CModel
         $originalAttributeName = $attribute;
 
         // Probably this is sub document
-        if (($pos = strpos($attribute, '[')) !== false) {
-            $documents = $this->subDocuments();
-            if (!empty($documents)) {
-                foreach (array_keys($documents) as $itemName) {
-                    if (preg_match("/^" . preg_quote($itemName) . "\[/", $attribute)) {
-                        $attribute = $itemName;
-                    }
-                }
-            }
-        }
+        $attribute = $this->parseAttributeName($attribute);
 
         foreach($this->getValidators($attribute) as $validator) {
             if ($validator instanceof CRequiredValidator) {
                 return true;
             }
             if ($validator instanceof YSubDocumentValidator) {
+                $documents = $this->subDocuments();
                 if (!empty($documents[$attribute])) {
                     // Get nested document
                     $document = $this->{$attribute};
