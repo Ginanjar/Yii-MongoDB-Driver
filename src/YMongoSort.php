@@ -82,6 +82,13 @@ class YMongoSort extends CSort
         $orders=array();
         foreach($directions as $attribute => $descending) {
             $definition = $this->resolveAttribute($attribute);
+
+            // Already Mongo?
+            if (!is_bool($descending) && in_array($descending, array(MongoCollection::DESCENDING, MongoCollection::ASCENDING))) {
+                $orders[$definition] = $descending;
+                continue;
+            }
+
             if (is_array($definition)) {
                 // Atm only single cell sorting is allowed, this will change to allow you to define
                 // a true definition of multiple fields to sort when one sort field is triggered but atm that is not possible
