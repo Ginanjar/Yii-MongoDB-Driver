@@ -76,7 +76,7 @@ class YMongoSort extends CSort
     {
         $directions = $this->getDirections();
         if (empty($directions)) {
-            return is_string($this->defaultOrder) ? $this->defaultOrder : array();
+            return is_array($this->defaultOrder) ? $this->defaultOrder : array();
         }
 
         $orders=array();
