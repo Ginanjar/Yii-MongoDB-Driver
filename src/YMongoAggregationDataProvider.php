@@ -45,6 +45,11 @@ class YMongoAggregationDataProvider extends CDataProvider
     private $_connection;
 
     /**
+     * @var YMongoSort
+     */
+    private $_sort;
+
+    /**
      * @param array $pipeline
      * @param array $config
      * @throws CException
@@ -96,6 +101,16 @@ class YMongoAggregationDataProvider extends CDataProvider
     protected function fetchData()
     {
         $pipeline = $this->pipeline;
+
+        // Ordering
+        if(false !== ($sort=$this->getSort())) {
+            $sort = $sort->getOrderBy();
+            if (!empty($sort)) {
+                $pipeline[] = array(
+                    '$sort' => $sort,
+                );
+            }
+        }
 
         if (($pagination = $this->getPagination()) !== false) {
             $pagination->setItemCount($this->getTotalItemCount());
@@ -182,5 +197,14 @@ class YMongoAggregationDataProvider extends CDataProvider
         } catch (Exception $e) { }
 
         return $result;
+    }
+
+    /**
+     * @param string $className
+     * @return YMongoSort
+     */
+    public function getSort($className = 'YMongoSort')
+    {
+        return parent::getSort($className);
     }
 } 
