@@ -101,12 +101,12 @@ class YMongoCursor implements Iterator, Countable
     }
 
     /**
-     * @param bool $takeSkip
+     * @param bool $foundOnly
      * @return int
      */
-    public function count($takeSkip = false /* Was true originally but it was to change the way the driver worked which seemed wrong */)
+    public function count($foundOnly = true)
     {
-        return $this->cursor()->count($takeSkip);
+        return $this->cursor()->count($foundOnly);
     }
 
     /**
