@@ -200,7 +200,7 @@ class YMongoCriteria extends CComponent
 
         $query = array();
 
-        if (!is_bool($value) && preg_match('/^(?:\s*(<>|!=|<=|>=|<|>|=))?(.*)$/', $value, $matches)) {
+        if (is_scalar($value) && !is_bool($value) && preg_match('/^(?:\s*(<>|!=|<=|>=|<|>|=))?(.*)$/', $value, $matches)) {
             // Operator and value
             list(/* full expression */, $operator, $value) = $matches;
 
