@@ -2,6 +2,7 @@
 Please update this document each time you close an issue by your commit.
 
 ## Yii-MongoDB-Driver latest development alpha
+- **(fix)** Fix an exception in `YMongoDocument` and `YMongoIdBehaviour` when MongoId is incorrect (fromYukki)
 - **(enh)** Ordering for `YMongoAggregationDataProvider` (fromYukki)
 - **(enh)** Client validation for nested documents (fromYukki)
 - **(enh)** Implement `isAttributeRequired` for nested documents (fromYukki)

@@ -996,7 +996,14 @@ abstract class YMongoDocument extends YMongoModel
         if (null === $value) {
             $value = $this->{$this->primaryKey()};
         }
-        return ($value instanceof MongoId) ? $value : new MongoId($value);
+        if (!($value instanceof MongoId)) {
+            try {
+                $value = new MongoId($value);
+            } catch (Exception $e) {
+                $value = null;
+            }
+        }
+        return $value;
     }
 
     /**

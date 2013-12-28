@@ -59,7 +59,12 @@ class YMongoIdBehaviour extends CActiveRecordBehavior
         }
         // Single element
         else {
-            return new MongoId($value);
+            try {
+                $value = new MongoId($value);
+            } catch (Exception $e) {
+                $value = null;
+            }
+            return $value;
         }
     }
 }
