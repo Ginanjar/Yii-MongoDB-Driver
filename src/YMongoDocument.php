@@ -769,7 +769,7 @@ abstract class YMongoDocument extends YMongoModel
              * Otherwise, returns TRUE.
              */
             if (true === $res || (is_array($res) && !empty($res['ok']))) {
-                return true;
+                return $res;
             }
         } catch (Exception $e) {
             if ($this->getConnection()->enableProfiling) {
