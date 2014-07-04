@@ -25,7 +25,7 @@ if ((bool) ini_get('mongo.long_as_object')) {
     ini_set('mongo.long_as_object', 0);
 }
 if (! (bool) ini_get('mongo.native_long')) {
-    ini_set('mongo.native_long', 1);
+    ini_set('mongo.native_long', strlen(decbin(~0)) == 32 ? 0 : 1);
 }
 
 class YMongoClient extends CApplicationComponent
