@@ -494,7 +494,7 @@ abstract class YMongoDocument extends YMongoModel
         Yii::trace(get_class($this).'.count()', 'ext.mongoDb.YMongoDocument');
 
         // If we provide a manual criteria via YMongoCriteria or an array we do not use the models own DbCriteria
-        $criteria = !empty($criteria) && !($criteria instanceof YMongoCriteria) ? $criteria : $this->getDbCriteria();
+        $criteria = !empty($criteria) && ($criteria instanceof YMongoCriteria) ? $criteria : $this->getDbCriteria();
 
         if ($criteria instanceof YMongoCriteria) {
             $criteria = $criteria->getCondition();
